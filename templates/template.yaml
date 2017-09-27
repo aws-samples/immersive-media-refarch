@@ -332,16 +332,13 @@ Resources:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
 
-                # this to be replaced with git clone https://github.com/whateverwearenamingthis
+                yum -y install git
 
-                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
-                && tar zxf user-data.tar.gz
-
-                chmod +x /tmp/user-data/user-data-origin.sh
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
                 REGION=${AWS::Region} INGRESSBUCKET=${encodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
                 ENI_ID=${backupOriginElasticNetworkInterface} ALLOCATION_ID=${backupOriginElasticIp.AllocationId}
-                WAITCONDITIONHANDLE="${backupOriginSpotFleetWaitConditionHandle}" /tmp/user-data/user-data-origin.sh
+                WAITCONDITIONHANDLE="${backupOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-origin.sh
 
                 '
         SpotPrice: 1.705
@@ -513,18 +510,15 @@ Resources:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
 
-                # this to be replaced with git clone https://github.com/whateverwearenamingthis
+                yum -y install git
 
-                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
-                && tar zxf user-data.tar.gz
-
-                chmod +x /tmp/user-data/user-data-edge.sh
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
                 REGION=${AWS::Region} APPLICATIONLOADBALANCERTARGETGROUP=${applicationLoadBalancerTargetGroup}
                 CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup} EGRESSBUCKETWEBSITEURL=${encodingEgressBucket.WebsiteURL}
                 PRIMARYORIGINPRIVATEIP=${primaryOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
                 BACKUPORIGINPRIVATEIP=${backupOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
-                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" /tmp/user-data/user-data-edge.sh
+                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-edge.sh
 
                 '
         SpotPrice: 1.705
@@ -901,16 +895,13 @@ Resources:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
 
-                ## this to be replaced with git clone https://github.com/whateverwearenamingthis
+                yum -y install git
 
-                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
-                && tar zxf user-data.tar.gz
-
-                chmod +x /tmp/user-data/user-data-origin.sh
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
                 REGION=${AWS::Region} INGRESSBUCKET=${encodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
                 ENI_ID=${primaryOriginElasticNetworkInterface} ALLOCATION_ID=${primaryOriginElasticIp.AllocationId}
-                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" /tmp/user-data/user-data-origin.sh
+                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-origin.sh
 
                 '
         SpotPrice: 1.705
@@ -1223,15 +1214,12 @@ Resources:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
 
-                # this to be replaced with git clone https://whateverwearenamingthis
+                yum -y install git
 
-                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
-                && tar zxf user-data.tar.gz
-
-                chmod +x /tmp/user-data/user-data-test.sh
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
                 REGION=${AWS::Region} ECS_CLUSTER=${testStreamEcsCluster} WAITCONDITIONHANDLE="${testStreamSpotFleetWaitConditionHandle}"
-                /tmp/user-data/user-data-test.sh
+                bash /root/immersive-media-refarch/user-data/user-data-test.sh
 
                 '
         SpotPrice: 1.705

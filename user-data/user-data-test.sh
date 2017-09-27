@@ -9,7 +9,7 @@ yum -y update aws-cli
 yum -y install aws-cfn-bootstrap
 
 aws configure set default.region $REGION
-sed -i "s/us-east-1/$REGION/" "/etc/awslogs/awscli.conf"
+sed -i "s|us-east-1|$REGION|g" /etc/awslogs/awscli.conf
 
 echo ECS_CLUSTER=$ECS_CLUSTER >> /etc/ecs/ecs.config
 

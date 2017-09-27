@@ -7,7 +7,7 @@ yum -y --security update
 yum -y update aws-cli
 
 yum -y install \
-  awslogs git jq htop pcre-devel zlib-devel \
+  awslogs jq htop pcre-devel zlib-devel \
   openssl-devel gcc gcc-c++ make libaio \
   libaio-devel openssl libxslt-devel rpm-build \
   gperftools-devel GeoIP-devel gd-devel perl-devel perl-ExtUtils-Embed
@@ -53,12 +53,12 @@ echo "include /etc/nginx/rtmp.d/*.conf;" >> /etc/nginx/nginx.conf
 
 sed -i "s|worker_processes auto|worker_processes 1|g" /etc/nginx/nginx.conf
 
-cp -av /tmp/user-data/origin/nginx/default.d/rtmp.conf /etc/nginx/default.d/
-cp -av /tmp/user-data/origin/nginx/rtmp.d/rtmp.conf /etc/nginx/rtmp.d/
-cp -av /tmp/user-data/origin/awslogs/awslogs.conf /etc/awslogs/
-cp -av /tmp/user-data/origin/bin/record-postprocess.sh /usr/local/bin/
-cp -av /tmp/user-data/origin/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
-cp -av /tmp/user-data/origin/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
+cp -av /root/immersive-media-refarch/user-data/origin/nginx/default.d/rtmp.conf /etc/nginx/default.d/
+cp -av /root/immersive-media-refarch/user-data/origin/nginx/rtmp.d/rtmp.conf /etc/nginx/rtmp.d/
+cp -av /root/immersive-media-refarch/user-data/origin/awslogs/awslogs.conf /etc/awslogs/
+cp -av /root/immersive-media-refarch/user-data/origin/bin/record-postprocess.sh /usr/local/bin/
+cp -av /root/immersive-media-refarch/user-data/origin/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
+cp -av /root/immersive-media-refarch/user-data/origin/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
 
 chmod +x /usr/local/bin/spot-instance-termination-notice-handler.sh
 

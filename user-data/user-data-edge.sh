@@ -7,17 +7,17 @@ yum -y --security update
 yum -y update aws-cli
 
 yum -y install \
-  awslogs git jq htop nginx
+  awslogs jq htop nginx
 
 aws configure set default.region $REGION
 
 echo '$SystemLogRateLimitInterval 2' >> /etc/rsyslog.conf
 echo '$SystemLogRateLimitBurst 500' >> /etc/rsyslog.conf
 
-cp -av /tmp/user-data/edge/nginx/nginx.conf /etc/nginx/
-cp -av /tmp/user-data/edge/awslogs/awslogs.conf /etc/awslogs/
-cp -av /tmp/user-data/encoding/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
-cp -av /tmp/user-data/encoding/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
+cp -av /root/immersive-media-refarch/user-data/edge/nginx/nginx.conf /etc/nginx/
+cp -av /root/immersive-media-refarch/user-data/edge/awslogs/awslogs.conf /etc/awslogs/
+cp -av /root/immersive-media-refarch/user-data/encoding/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
+cp -av /root/immersive-media-refarch/user-data/encoding/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
 
 chmod +x /usr/local/bin/spot-instance-termination-notice-handler.sh
 
