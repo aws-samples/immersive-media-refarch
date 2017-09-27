@@ -341,6 +341,7 @@ Resources:
                 WAITCONDITIONHANDLE="${backupOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-origin.sh
 
                 '
+        ReplaceUnhealthyInstances: true
         SpotPrice: 1.705
         TargetCapacity: 1
         TerminateInstancesWithExpiration: true
@@ -521,6 +522,7 @@ Resources:
                 WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-edge.sh
 
                 '
+        ReplaceUnhealthyInstances: true
         SpotPrice: 1.705
         TargetCapacity:
           Ref: edgeCacheSpotFleetTargetCapacity
@@ -715,6 +717,7 @@ Resources:
                 WAITCONDITIONHANDLE="${encodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-encoding.sh
 
                 '
+        ReplaceUnhealthyInstances: true
         SpotPrice: 1.705
         TargetCapacity:
           Ref: encodingSpotFleetTargetCapacity
@@ -904,6 +907,7 @@ Resources:
                 WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-origin.sh
 
                 '
+        ReplaceUnhealthyInstances: true
         SpotPrice: 1.705
         TargetCapacity: 1
         TerminateInstancesWithExpiration: true
@@ -1222,6 +1226,7 @@ Resources:
                 bash /root/immersive-media-refarch/user-data/user-data-test.sh
 
                 '
+        ReplaceUnhealthyInstances: true
         SpotPrice: 1.705
         TargetCapacity: 1
         TerminateInstancesWithExpiration: true
