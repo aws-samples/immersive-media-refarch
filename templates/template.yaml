@@ -713,15 +713,12 @@ Resources:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
 
-                # this to be replaced with git clone https://whateverwearenamingthis
+                yum -y install git
 
-                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
-                && tar zxf user-data.tar.gz
-
-                chmod +x /tmp/user-data/user-data-encoding.sh
+                git clone https://github.com/awslabs/immersive-media-refarch.git
 
                 REGION=${AWS::Region} EGRESSBUCKET=${encodingEgressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
-                WAITCONDITIONHANDLE="${encodingSpotFleetWaitConditionHandle}" /tmp/user-data/user-data-encoding.sh
+                WAITCONDITIONHANDLE="${encodingSpotFleetWaitConditionHandle}" bash immersive-media-refarch/user-data/user-data-encoding.sh
 
                 '
         SpotPrice: 1.705
