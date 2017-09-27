@@ -715,10 +715,10 @@ Resources:
 
                 yum -y install git
 
-                git clone https://github.com/awslabs/immersive-media-refarch.git
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
                 REGION=${AWS::Region} EGRESSBUCKET=${encodingEgressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
-                WAITCONDITIONHANDLE="${encodingSpotFleetWaitConditionHandle}" bash immersive-media-refarch/user-data/user-data-encoding.sh
+                WAITCONDITIONHANDLE="${encodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-encoding.sh
 
                 '
         SpotPrice: 1.705
