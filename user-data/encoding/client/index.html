@@ -1,0 +1,49 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>360 Video</title>
+    <meta name="description" content="360 Video — A-Frame">
+    <script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+      function getParameterByName (name, url) {
+      if (!url) {
+        url = window.location.href
+      }
+      name = name.replace(/[\[\]]/g, '\\$&')
+      var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+        results = regex.exec(url)
+      if (!results) return null
+      if (!results[2]) return ''
+      return decodeURIComponent(results[2].replace(/\+/g, ' '))
+    }
+
+    function hlsLoad (stream) {
+      if (Hls.isSupported()) {
+        var video = document.getElementById('video')
+        var hls = new Hls()
+        hls.loadSource(getParameterByName('url'))
+        hls.attachMedia(video)
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.play()
+        })
+      } else {
+        console.error('insert an m3u8 manifest please!')
+      }
+    }
+
+    console.log('loading', getParameterByName('url'))
+
+    document.addEventListener('DOMContentLoaded', hlsLoad)
+    </script>
+  </head>
+  <body>
+    <a-scene>
+      <a-assets timeout="10000">
+        <video id="video" src="" autoplay loop crossorigin="anonymous"></video>
+      </a-assets>
+      <a-videosphere src="#video" rotation="0 180 0"></a-videosphere>
+    </a-scene>
+  </body>
+</html>
+

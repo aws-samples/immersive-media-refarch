@@ -1,0 +1,1308 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Running a Highly Scalable Immersive Media Solution on EC2 Spot Instances
+Mappings:
+  CidrMappings:
+    public-subnet-1:
+      CIDR: 10.0.1.0/24
+    public-subnet-2:
+      CIDR: 10.0.2.0/24
+    vpc:
+      CIDR: 10.0.0.0/16
+  amazonLinuxAmi:
+    ap-northeast-1:
+      AMI: ami-dac312b4
+    ap-southeast-1:
+      AMI: ami-dc9339bf
+    ap-southeast-2:
+      AMI: ami-1c47407f
+    ca-central-1:
+      AMI: ami-ebed508f
+    eu-central-1:
+      AMI: ami-af0fc0c0
+    eu-west-1:
+      AMI: ami-70edb016
+    eu-west-2:
+      AMI: ami-f1949e95
+    us-east-1:
+      AMI: ami-0b33d91d
+    us-east-2:
+      AMI: ami-c55673a0
+    us-west-1:
+      AMI: ami-165a0876
+    us-west-2:
+      AMI: ami-f173cc91
+  ecsOptimizedAmi:
+    ap-northeast-1:
+      AMI: ami-f63f6f91
+    ap-southeast-1:
+      AMI: ami-b4ae1dd7
+    ap-southeast-2:
+      AMI: ami-fbe9eb98
+    ca-central-1:
+      AMI: ami-ee58e58a
+    eu-central-1:
+      AMI: ami-085e8a67
+    eu-west-1:
+      AMI: ami-95f8d2f3
+    eu-west-2:
+      AMI: ami-bf9481db
+    us-east-1:
+      AMI: ami-275ffe31
+    us-east-2:
+      AMI: ami-62745007
+    us-west-1:
+      AMI: ami-689bc208
+    us-west-2:
+      AMI: ami-62d35c02
+Metadata:
+  Authors:
+    Description: Konstantin Wilms <konwilms@amazon.com>, Shawn Przybilla <przybill@amazon.com>,
+      Chad Schmutzer <schmutze@amazon.com>
+  License:
+    Description: 'Copyright 2017 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+
+      Licensed under the Amazon Software License (the "License"). You may not use this file
+      except in compliance with the License. A copy of the License is located at
+
+      http://aws.amazon.com/asl/
+
+      or in the "license" file accompanying this file. This file is distributed on an "AS IS"
+      BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+      License for the specific language governing permissions and limitations under the License.'
+Outputs:
+  applicationLoadBalancerId:
+    Description: The Application Load Balancer ID
+    Value:
+      Ref: applicationLoadBalancer
+  awsRegionId:
+    Description: The AWS Region ID your template was launched in
+    Value:
+      Ref: AWS::Region
+  backupOriginElasticIp:
+    Description: The backup origin Elastic IP
+    Value:
+      Ref: backupOriginElasticIp
+  backupOriginElasticNetworkInterfacePrivateIpAddress:
+    Description: The primary private IP address of the backup origin Elastic Network Interface
+    Value:
+      Fn::GetAtt:
+      - backupOriginElasticNetworkInterface
+      - PrimaryPrivateIpAddress
+  backupOriginSpotFleetId:
+    Description: The backup origin Spot fleet request ID
+    Value:
+      Ref: backupOriginSpotFleet
+  clientTestPatternURL:
+    Description: URL for the test pattern
+    Value:
+      Fn::Join:
+      - ''
+      - - Fn::GetAtt:
+          - encodingEgressBucket
+          - WebsiteURL
+        - /?url=https://
+        - Fn::GetAtt:
+          - cloudFrontDistribution
+          - DomainName
+        - /hls/test.m3u8
+  clientWebsiteURL:
+    Description: URL for the website hosted on S3
+    Value:
+      Fn::Join:
+      - ''
+      - - Fn::GetAtt:
+          - encodingEgressBucket
+          - WebsiteURL
+        - /?url=
+  cloudFrontDistributionId:
+    Description: The CloudFront Distribution ID
+    Value:
+      Ref: cloudFrontDistribution
+  cloudFrontDistributionUrl:
+    Description: The URL of the CloudFront Distribution
+    Value:
+      Fn::Join:
+      - ''
+      - - http://
+        - Fn::GetAtt:
+          - cloudFrontDistribution
+          - DomainName
+  cloudWatchLogsGroupId:
+    Description: The CloudWatch Logs group ID
+    Value:
+      Ref: cloudWatchLogsGroup
+  edgeCacheSpotFleetId:
+    Description: The edge cache Spot fleet request ID
+    Value:
+      Ref: edgeCacheSpotFleet
+  encodingEgressBucketId:
+    Description: The encoding egress S3 bucket ID
+    Value:
+      Ref: encodingEgressBucket
+  encodingIngressBucketId:
+    Description: The encoding ingress S3 bucket ID
+    Value:
+      Ref: encodingIngressBucket
+  encodingQueueArn:
+    Description: The encoding SQS queue ARN
+    Value:
+      Fn::GetAtt:
+      - encodingQueue
+      - Arn
+  encodingSpotFleetId:
+    Description: The encoding Spot fleet request ID
+    Value:
+      Ref: encodingSpotFleet
+  primaryOriginElasticIp:
+    Description: The primary origin Elastic IP
+    Value:
+      Ref: primaryOriginElasticIp
+  primaryOriginElasticNetworkInterfacePrivateIpAddress:
+    Description: The primary private IP address of the primary origin Elastic Network Interface
+    Value:
+      Fn::GetAtt:
+      - primaryOriginElasticNetworkInterface
+      - PrimaryPrivateIpAddress
+  primaryOriginSpotFleetId:
+    Description: The primary origin Spot fleet request ID
+    Value:
+      Ref: primaryOriginSpotFleet
+  testStreamEcsCluster:
+    Description: The name of the ECS cluster
+    Value:
+      Ref: testStreamEcsCluster
+  testStreamSpotFleet:
+    Description: The test stream Spot fleet request ID
+    Value:
+      Ref: testStreamSpotFleet
+Parameters:
+  edgeCacheSpotFleetMaximumCapacity:
+    Default: '6'
+    Description: Maximum number of EC2 Spot instances to scale the edge cache Spot fleet
+    Type: Number
+  edgeCacheSpotFleetTargetCapacity:
+    Default: '2'
+    Description: Number of EC2 Spot instances to initially launch in the edge cache Spot fleet
+    Type: Number
+  encodingSpotFleetMaximumCapacity:
+    Default: '6'
+    Description: Maximum number of EC2 Spot instances to scale the encoding Spot fleet
+    Type: Number
+  encodingSpotFleetTargetCapacity:
+    Default: '1'
+    Description: Number of EC2 Spot instances to initially launch in the encoding Spot fleet
+    Type: Number
+  keyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the EC2 instances
+    Type: AWS::EC2::KeyPair::KeyName
+  sourceCidr:
+    Default: 0.0.0.0/0
+    Description: Optional - CIDR/IP range for instance ssh access and encoder source - defaults
+      to 0.0.0.0/0
+    Type: String
+Resources:
+  applicationLoadBalancer:
+    DependsOn:
+    - applicationLoadBalancerSecurityGroup
+    Properties:
+      LoadBalancerAttributes:
+      - Key: idle_timeout.timeout_seconds
+        Value: 30
+      Scheme: internet-facing
+      SecurityGroups:
+      - Ref: applicationLoadBalancerSecurityGroup
+      Subnets:
+      - Ref: publicSubnet1
+      - Ref: publicSubnet2
+      Tags:
+      - Key: Name
+        Value: Application Load Balancer
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  applicationLoadBalancerListener:
+    DependsOn:
+    - applicationLoadBalancer
+    - applicationLoadBalancerTargetGroup
+    Properties:
+      DefaultActions:
+      - TargetGroupArn:
+          Ref: applicationLoadBalancerTargetGroup
+        Type: forward
+      LoadBalancerArn:
+        Ref: applicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+    Type: AWS::ElasticLoadBalancingV2::Listener
+  applicationLoadBalancerSecurityGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      GroupDescription: Application Load Balancer Security Group
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::SecurityGroup
+  applicationLoadBalancerTargetGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      HealthCheckIntervalSeconds: 5
+      HealthCheckPath: /
+      HealthCheckTimeoutSeconds: 2
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      Tags:
+      - Key: Name
+        Value: Application Load Balancer Target Group
+      TargetGroupAttributes:
+      - Key: stickiness.enabled
+        Value: true
+      UnhealthyThresholdCount: 10
+      VpcId:
+        Ref: vpc
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  attachGateway:
+    DependsOn:
+    - vpc
+    - internetGateway
+    Properties:
+      InternetGatewayId:
+        Ref: internetGateway
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::VPCGatewayAttachment
+  backupOriginElasticIp:
+    Properties:
+      Domain: vpc
+    Type: AWS::EC2::EIP
+  backupOriginElasticNetworkInterface:
+    DependsOn:
+    - publicSubnet2
+    Properties:
+      GroupSet:
+      - Ref: originSecurityGroup
+      - Ref: icmpSecurityGroup
+      SubnetId:
+        Ref: publicSubnet2
+    Type: AWS::EC2::NetworkInterface
+  backupOriginSpotFleet:
+    DependsOn:
+    - spotFleetRole
+    - spotFleetInstanceProfile
+    - originSecurityGroup
+    - icmpSecurityGroup
+    - encodingIngressBucket
+    - encodingEgressBucket
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: diversified
+        IamFleetRole:
+          Fn::GetAtt:
+          - spotFleetRole
+          - Arn
+        LaunchSpecifications:
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: c4.xlarge
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: originSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Ref: publicSubnet2
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                # this to be replaced with git clone https://github.com/whateverwearenamingthis
+
+                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
+                && tar zxf user-data.tar.gz
+
+                chmod +x /tmp/user-data/user-data-origin.sh
+
+                REGION=${AWS::Region} INGRESSBUCKET=${encodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                ENI_ID=${backupOriginElasticNetworkInterface} ALLOCATION_ID=${backupOriginElasticIp.AllocationId}
+                WAITCONDITIONHANDLE="${backupOriginSpotFleetWaitConditionHandle}" /tmp/user-data/user-data-origin.sh
+
+                '
+        SpotPrice: 1.705
+        TargetCapacity: 1
+        TerminateInstancesWithExpiration: true
+    Type: AWS::EC2::SpotFleet
+  backupOriginSpotFleetWaitCondition:
+    DependsOn: backupOriginSpotFleetWaitConditionHandle
+    Properties:
+      Count: 1
+      Handle:
+        Ref: backupOriginSpotFleetWaitConditionHandle
+      Timeout: 900
+    Type: AWS::CloudFormation::WaitCondition
+  backupOriginSpotFleetWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  cloudFrontDistribution:
+    Properties:
+      DistributionConfig:
+        CacheBehaviors:
+        - AllowedMethods:
+          - HEAD
+          - GET
+          CachedMethods:
+          - HEAD
+          - GET
+          Compress: false
+          DefaultTTL: 5
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          MaxTTL: 5
+          MinTTL: 0
+          PathPattern: '*.m3u8'
+          SmoothStreaming: false
+          TargetOriginId: applicationLoadBalancerOrigin
+          ViewerProtocolPolicy: allow-all
+        - AllowedMethods:
+          - HEAD
+          - GET
+          - OPTIONS
+          CachedMethods:
+          - HEAD
+          - GET
+          - OPTIONS
+          Compress: false
+          DefaultTTL: 3600
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          MaxTTL: 3600
+          MinTTL: 0
+          PathPattern: '*.ts'
+          SmoothStreaming: false
+          TargetOriginId: applicationLoadBalancerOrigin
+          ViewerProtocolPolicy: allow-all
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - HEAD
+          - GET
+          CachedMethods:
+          - HEAD
+          - GET
+          Compress: false
+          DefaultTTL: 5
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          MaxTTL: 5
+          MinTTL: 0
+          SmoothStreaming: false
+          TargetOriginId: applicationLoadBalancerOrigin
+          ViewerProtocolPolicy: allow-all
+        DefaultRootObject: index.html
+        Enabled: true
+        Origins:
+        - CustomOriginConfig:
+            HTTPPort: 80
+            OriginProtocolPolicy: http-only
+          DomainName:
+            Fn::GetAtt:
+            - applicationLoadBalancer
+            - DNSName
+          Id: applicationLoadBalancerOrigin
+        PriceClass: PriceClass_All
+    Type: AWS::CloudFront::Distribution
+  cloudWatchLogsGroup:
+    Properties:
+      RetentionInDays: 7
+    Type: AWS::Logs::LogGroup
+  edgeCacheSecurityGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      GroupDescription: Edge cache Spot fleet instance security group
+      SecurityGroupIngress:
+      - CidrIp:
+          Ref: sourceCidr
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::SecurityGroup
+  edgeCacheSecurityGroupIngress:
+    DependsOn:
+    - edgeCacheSecurityGroup
+    - applicationLoadBalancerSecurityGroup
+    Properties:
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+        - edgeCacheSecurityGroup
+        - GroupId
+      IpProtocol: tcp
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+        - applicationLoadBalancerSecurityGroup
+        - GroupId
+      ToPort: 80
+    Type: AWS::EC2::SecurityGroupIngress
+  edgeCacheSpotFleet:
+    DependsOn:
+    - spotFleetRole
+    - spotFleetInstanceProfile
+    - edgeCacheSecurityGroup
+    - icmpSecurityGroup
+    - primaryOriginSpotFleet
+    - backupOriginSpotFleet
+    - applicationLoadBalancerTargetGroup
+    - encodingEgressBucket
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: diversified
+        IamFleetRole:
+          Fn::GetAtt:
+          - spotFleetRole
+          - Arn
+        LaunchSpecifications:
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: c4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: edgeCacheSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                # this to be replaced with git clone https://github.com/whateverwearenamingthis
+
+                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
+                && tar zxf user-data.tar.gz
+
+                chmod +x /tmp/user-data/user-data-edge.sh
+
+                REGION=${AWS::Region} APPLICATIONLOADBALANCERTARGETGROUP=${applicationLoadBalancerTargetGroup}
+                CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup} EGRESSBUCKETWEBSITEURL=${encodingEgressBucket.WebsiteURL}
+                PRIMARYORIGINPRIVATEIP=${primaryOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
+                BACKUPORIGINPRIVATEIP=${backupOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
+                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" /tmp/user-data/user-data-edge.sh
+
+                '
+        SpotPrice: 1.705
+        TargetCapacity:
+          Ref: edgeCacheSpotFleetTargetCapacity
+        TerminateInstancesWithExpiration: true
+    Type: AWS::EC2::SpotFleet
+  edgeCacheSpotFleetScalableTarget:
+    DependsOn:
+    - edgeCacheSpotFleet
+    - spotFleetAutoscaleRole
+    Properties:
+      MaxCapacity:
+        Ref: edgeCacheSpotFleetMaximumCapacity
+      MinCapacity:
+        Ref: edgeCacheSpotFleetTargetCapacity
+      ResourceId:
+        Fn::Join:
+        - /
+        - - spot-fleet-request
+          - Ref: edgeCacheSpotFleet
+      RoleARN:
+        Fn::GetAtt:
+        - spotFleetAutoscaleRole
+        - Arn
+      ScalableDimension: ec2:spot-fleet-request:TargetCapacity
+      ServiceNamespace: ec2
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+  edgeCacheSpotFleetWaitCondition:
+    DependsOn: edgeCacheSpotFleetWaitConditionHandle
+    Properties:
+      Count:
+        Ref: edgeCacheSpotFleetTargetCapacity
+      Handle:
+        Ref: edgeCacheSpotFleetWaitConditionHandle
+      Timeout: 900
+    Type: AWS::CloudFormation::WaitCondition
+  edgeCacheSpotFleetWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  encodingEgressBucket:
+    Properties:
+      AccessControl: PublicRead
+      CorsConfiguration:
+        CorsRules:
+        - AllowedHeaders:
+          - '*'
+          AllowedMethods:
+          - GET
+          AllowedOrigins:
+          - '*'
+          MaxAge: '3600'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+    Type: AWS::S3::Bucket
+  encodingIngressBucket:
+    DependsOn:
+    - encodingQueue
+    - encodingQueuePolicy
+    Properties:
+      NotificationConfiguration:
+        QueueConfigurations:
+        - Event: s3:ObjectCreated:*
+          Queue:
+            Fn::GetAtt:
+            - encodingQueue
+            - Arn
+    Type: AWS::S3::Bucket
+  encodingQueue:
+    Properties:
+      VisibilityTimeout: 900
+    Type: AWS::SQS::Queue
+  encodingQueueDepthAlarmScaleDown:
+    DependsOn:
+    - encodingQueue
+    - encodingSpotFleetScalingPolicyScaleDown
+    Properties:
+      AlarmActions:
+      - Ref: encodingSpotFleetScalingPolicyScaleDown
+      AlarmDescription: Alarm if queue depth falls below 8 messages
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: QueueName
+        Value:
+          Fn::GetAtt:
+          - encodingQueue
+          - QueueName
+      EvaluationPeriods: 2
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Period: 300
+      Statistic: Sum
+      Threshold: 8
+    Type: AWS::CloudWatch::Alarm
+  encodingQueueDepthAlarmScaleUp:
+    DependsOn:
+    - encodingQueue
+    - encodingSpotFleetScalingPolicyScaleUp
+    Properties:
+      AlarmActions:
+      - Ref: encodingSpotFleetScalingPolicyScaleUp
+      AlarmDescription: Alarm if queue depth grows beyond 16 messages
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: QueueName
+        Value:
+          Fn::GetAtt:
+          - encodingQueue
+          - QueueName
+      EvaluationPeriods: 2
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Period: 300
+      Statistic: Sum
+      Threshold: 16
+    Type: AWS::CloudWatch::Alarm
+  encodingQueuePolicy:
+    DependsOn:
+    - encodingQueue
+    Properties:
+      PolicyDocument:
+        Statement:
+        - Action:
+          - sqs:SendMessage
+          Effect: Allow
+          Principal:
+            Service: s3.amazonaws.com
+          Resource: '*'
+        Version: 2012-10-17
+      Queues:
+      - Ref: encodingQueue
+    Type: AWS::SQS::QueuePolicy
+  encodingSecurityGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      GroupDescription: Encoding Spot fleet instance security group
+      SecurityGroupIngress:
+      - CidrIp:
+          Ref: sourceCidr
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::SecurityGroup
+  encodingSpotFleet:
+    DependsOn:
+    - spotFleetRole
+    - spotFleetInstanceProfile
+    - encodingSecurityGroup
+    - icmpSecurityGroup
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: diversified
+        IamFleetRole:
+          Fn::GetAtt:
+          - spotFleetRole
+          - Arn
+        LaunchSpecifications:
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: c4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: encodingSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                # this to be replaced with git clone https://whateverwearenamingthis
+
+                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
+                && tar zxf user-data.tar.gz
+
+                chmod +x /tmp/user-data/user-data-encoding.sh
+
+                REGION=${AWS::Region} EGRESSBUCKET=${encodingEgressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                WAITCONDITIONHANDLE="${encodingSpotFleetWaitConditionHandle}" /tmp/user-data/user-data-encoding.sh
+
+                '
+        SpotPrice: 1.705
+        TargetCapacity:
+          Ref: encodingSpotFleetTargetCapacity
+        TerminateInstancesWithExpiration: true
+    Type: AWS::EC2::SpotFleet
+  encodingSpotFleetScalableTarget:
+    DependsOn:
+    - encodingSpotFleet
+    - spotFleetAutoscaleRole
+    Properties:
+      MaxCapacity:
+        Ref: encodingSpotFleetMaximumCapacity
+      MinCapacity:
+        Ref: encodingSpotFleetTargetCapacity
+      ResourceId:
+        Fn::Join:
+        - /
+        - - spot-fleet-request
+          - Ref: encodingSpotFleet
+      RoleARN:
+        Fn::GetAtt:
+        - spotFleetAutoscaleRole
+        - Arn
+      ScalableDimension: ec2:spot-fleet-request:TargetCapacity
+      ServiceNamespace: ec2
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+  encodingSpotFleetScalingPolicyScaleDown:
+    Properties:
+      PolicyName: encodingSpotFleetScalingPolicyScaleDown
+      PolicyType: StepScaling
+      ScalingTargetId:
+        Ref: encodingSpotFleetScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalUpperBound: 0
+          ScalingAdjustment: -1
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  encodingSpotFleetScalingPolicyScaleUp:
+    Properties:
+      PolicyName: encodingSpotFleetScalingPolicyScaleUp
+      PolicyType: StepScaling
+      ScalingTargetId:
+        Ref: encodingSpotFleetScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: 1
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  encodingSpotFleetWaitCondition:
+    DependsOn: encodingSpotFleetWaitConditionHandle
+    Properties:
+      Count:
+        Ref: encodingSpotFleetTargetCapacity
+      Handle:
+        Ref: encodingSpotFleetWaitConditionHandle
+      Timeout: 900
+    Type: AWS::CloudFormation::WaitCondition
+  encodingSpotFleetWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  icmpSecurityGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      GroupDescription: Security group to allow ICMP
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: -1
+        IpProtocol: icmp
+        ToPort: -1
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::SecurityGroup
+  internetGateway:
+    DependsOn:
+    - vpc
+    Type: AWS::EC2::InternetGateway
+  originSecurityGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      GroupDescription: Origin Spot fleet instance security group
+      SecurityGroupIngress:
+      - CidrIp:
+          Ref: sourceCidr
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      - CidrIp:
+          Ref: sourceCidr
+        FromPort: 1935
+        IpProtocol: tcp
+        ToPort: 1935
+      - CidrIp:
+          Ref: sourceCidr
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::SecurityGroup
+  originSecurityGroupIngress:
+    DependsOn:
+    - originSecurityGroup
+    - edgeCacheSecurityGroup
+    Properties:
+      FromPort: 80
+      GroupId:
+        Fn::GetAtt:
+        - originSecurityGroup
+        - GroupId
+      IpProtocol: tcp
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+        - edgeCacheSecurityGroup
+        - GroupId
+      ToPort: 80
+    Type: AWS::EC2::SecurityGroupIngress
+  primaryOriginElasticIp:
+    Properties:
+      Domain: vpc
+    Type: AWS::EC2::EIP
+  primaryOriginElasticNetworkInterface:
+    DependsOn:
+    - publicSubnet1
+    Properties:
+      GroupSet:
+      - Ref: originSecurityGroup
+      - Ref: icmpSecurityGroup
+      SubnetId:
+        Ref: publicSubnet1
+    Type: AWS::EC2::NetworkInterface
+  primaryOriginSpotFleet:
+    DependsOn:
+    - spotFleetRole
+    - spotFleetInstanceProfile
+    - originSecurityGroup
+    - icmpSecurityGroup
+    - encodingIngressBucket
+    - encodingEgressBucket
+    - primaryOriginElasticNetworkInterface
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: diversified
+        IamFleetRole:
+          Fn::GetAtt:
+          - spotFleetRole
+          - Arn
+        LaunchSpecifications:
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: c4.xlarge
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: originSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Ref: publicSubnet1
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                ## this to be replaced with git clone https://github.com/whateverwearenamingthis
+
+                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
+                && tar zxf user-data.tar.gz
+
+                chmod +x /tmp/user-data/user-data-origin.sh
+
+                REGION=${AWS::Region} INGRESSBUCKET=${encodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                ENI_ID=${primaryOriginElasticNetworkInterface} ALLOCATION_ID=${primaryOriginElasticIp.AllocationId}
+                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" /tmp/user-data/user-data-origin.sh
+
+                '
+        SpotPrice: 1.705
+        TargetCapacity: 1
+        TerminateInstancesWithExpiration: true
+    Type: AWS::EC2::SpotFleet
+  primaryOriginSpotFleetWaitCondition:
+    DependsOn: primaryOriginSpotFleetWaitConditionHandle
+    Properties:
+      Count: 1
+      Handle:
+        Ref: primaryOriginSpotFleetWaitConditionHandle
+      Timeout: 900
+    Type: AWS::CloudFormation::WaitCondition
+  primaryOriginSpotFleetWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  publicRoute:
+    DependsOn:
+    - publicRouteTable
+    - internetGateway
+    - attachGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: internetGateway
+      RouteTableId:
+        Ref: publicRouteTable
+    Type: AWS::EC2::Route
+  publicRouteTable:
+    DependsOn:
+    - vpc
+    - attachGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: Public Route Table
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::RouteTable
+  publicSubnet1:
+    DependsOn: attachGateway
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock:
+        Fn::FindInMap:
+        - CidrMappings
+        - public-subnet-1
+        - CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: Public Subnet 1
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::Subnet
+  publicSubnet1RouteTableAssociation:
+    DependsOn:
+    - publicRouteTable
+    - publicSubnet1
+    - attachGateway
+    Properties:
+      RouteTableId:
+        Ref: publicRouteTable
+      SubnetId:
+        Ref: publicSubnet1
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  publicSubnet2:
+    DependsOn: attachGateway
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - 1
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock:
+        Fn::FindInMap:
+        - CidrMappings
+        - public-subnet-2
+        - CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: Public Subnet 2
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::Subnet
+  publicSubnet2RouteTableAssociation:
+    DependsOn:
+    - publicRouteTable
+    - publicSubnet2
+    - attachGateway
+    Properties:
+      RouteTableId:
+        Ref: publicRouteTable
+      SubnetId:
+        Ref: publicSubnet2
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  spotFleetAutoscaleRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - application-autoscaling.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetAutoscaleRole
+      Path: /
+    Type: AWS::IAM::Role
+  spotFleetInstanceProfile:
+    DependsOn:
+    - spotFleetInstanceRole
+    Properties:
+      Path: /
+      Roles:
+      - Ref: spotFleetInstanceRole
+    Type: AWS::IAM::InstanceProfile
+  spotFleetInstanceRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action: sqs:*
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+              - encodingQueue
+              - Arn
+          Version: 2012-10-17
+        PolicyName:
+          Fn::Join:
+          - '-'
+          - - Ref: AWS::StackName
+            - encodingQueuePolicy
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - ec2:AttachNetworkInterface
+            - ec2:DetachNetworkInterface
+            - ec2:AssociateAddress
+            - ec2:DisassociateAddress
+            Effect: Allow
+            Resource: '*'
+          Version: 2012-10-17
+        PolicyName:
+          Fn::Join:
+          - '-'
+          - - Ref: AWS::StackName
+            - networkInterfacePolicy
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogStreams
+            Effect: Allow
+            Resource: arn:aws:logs:*:*:*
+          Version: 2012-10-17
+        PolicyName:
+          Fn::Join:
+          - '-'
+          - - Ref: AWS::StackName
+            - cloudWatchLogsPolicy
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - elasticloadbalancing:DeregisterTargets
+            - elasticloadbalancing:RegisterTargets
+            Effect: Allow
+            Resource: '*'
+          Version: '2012-10-17'
+        PolicyName:
+          Fn::Join:
+          - '-'
+          - - Ref: AWS::StackName
+            - applicationLoadBalancerPolicy
+      - PolicyDocument:
+          Statement:
+          - Action: s3:ListBucket
+            Effect: Allow
+            Resource:
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: encodingIngressBucket
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: encodingEgressBucket
+          Version: '2012-10-17'
+        PolicyName:
+          Fn::Join:
+          - '-'
+          - - Ref: AWS::StackName
+            - encodingBucketsListPolicy
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - s3:PutObject*
+            - s3:GetObject
+            - s3:DeleteObject
+            Effect: Allow
+            Resource:
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: encodingIngressBucket
+                - /*
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: encodingEgressBucket
+                - /*
+          Version: '2012-10-17'
+        PolicyName:
+          Fn::Join:
+          - '-'
+          - - Ref: AWS::StackName
+            - encodingBucketsReadWritePolicy
+    Type: AWS::IAM::Role
+  spotFleetRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - spotfleet.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+      Path: /
+    Type: AWS::IAM::Role
+  testStreamEcsCluster:
+    Type: AWS::ECS::Cluster
+  testStreamEcsService:
+    DependsOn:
+    - testStreamSpotFleet
+    - testStreamTaskDefinition
+    - testStreamEcsCluster
+    - primaryOriginSpotFleet
+    - backupOriginSpotFleet
+    Properties:
+      Cluster:
+        Ref: testStreamEcsCluster
+      DesiredCount: 1
+      TaskDefinition:
+        Ref: testStreamTaskDefinition
+    Type: AWS::ECS::Service
+  testStreamSpotFleet:
+    DependsOn:
+    - spotFleetRole
+    - spotFleetInstanceProfile
+    - originSecurityGroup
+    - icmpSecurityGroup
+    - testStreamEcsCluster
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: diversified
+        IamFleetRole:
+          Fn::GetAtt:
+          - spotFleetRole
+          - Arn
+        LaunchSpecifications:
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - ecsOptimizedAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: c4.xlarge
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: originSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Ref: publicSubnet1
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                # this to be replaced with git clone https://whateverwearenamingthis
+
+                cd /tmp && curl -O https://s3-us-west-1.amazonaws.com/adropinthebucket/user-data.tar.gz
+                && tar zxf user-data.tar.gz
+
+                chmod +x /tmp/user-data/user-data-test.sh
+
+                REGION=${AWS::Region} ECS_CLUSTER=${testStreamEcsCluster} WAITCONDITIONHANDLE="${testStreamSpotFleetWaitConditionHandle}"
+                /tmp/user-data/user-data-test.sh
+
+                '
+        SpotPrice: 1.705
+        TargetCapacity: 1
+        TerminateInstancesWithExpiration: true
+    Type: AWS::EC2::SpotFleet
+  testStreamSpotFleetWaitCondition:
+    DependsOn: testStreamSpotFleetWaitConditionHandle
+    Properties:
+      Count: 1
+      Handle:
+        Ref: testStreamSpotFleetWaitConditionHandle
+      Timeout: 900
+    Type: AWS::CloudFormation::WaitCondition
+  testStreamSpotFleetWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  testStreamTaskDefinition:
+    Properties:
+      ContainerDefinitions:
+      - Command:
+        - -re
+        - -stats
+        - -f
+        - lavfi
+        - -i
+        - testsrc=size=1280x720:rate=30
+        - -vcodec
+        - libx264
+        - -vf
+        - format=yuv420p
+        - -b
+        - 500k
+        - -c:a
+        - aac
+        - -b:a
+        - 160k
+        - -f
+        - flv
+        - Fn::Join:
+          - ''
+          - - rtmp://
+            - Fn::GetAtt:
+              - primaryOriginElasticNetworkInterface
+              - PrimaryPrivateIpAddress
+            - :1935/live/test
+        Image: jrottenberg/ffmpeg
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group:
+              Ref: cloudWatchLogsGroup
+            awslogs-region:
+              Ref: AWS::Region
+            awslogs-stream-prefix: ecs
+        Memory: 2048
+        Name: testStream
+    Type: AWS::ECS::TaskDefinition
+  vpc:
+    Properties:
+      CidrBlock:
+        Fn::FindInMap:
+        - CidrMappings
+        - vpc
+        - CIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+      - Key: Name
+        Value: VPC for Running a Highly Scalable Immersive Media Solution on EC2 Spot instances
+    Type: AWS::EC2::VPC
+...
