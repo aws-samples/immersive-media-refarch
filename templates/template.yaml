@@ -93,26 +93,26 @@ Outputs:
     Description: The backup origin Spot fleet request ID
     Value:
       Ref: backupOriginSpotFleet
-  clientTestPatternURL:
+  clientTestPatternUrl:
     Description: URL for the test pattern
     Value:
       Fn::Join:
       - ''
       - - Fn::GetAtt:
-          - encodingEgressBucket
+          - transcodingEgressBucket
           - WebsiteURL
         - /?url=https://
         - Fn::GetAtt:
           - cloudFrontDistribution
           - DomainName
         - /hls/test.m3u8
-  clientWebsiteURL:
+  clientWebsiteUrl:
     Description: URL for the website hosted on S3
     Value:
       Fn::Join:
       - ''
       - - Fn::GetAtt:
-          - encodingEgressBucket
+          - transcodingEgressBucket
           - WebsiteURL
         - /?url=
   cloudFrontDistributionId:
@@ -136,24 +136,6 @@ Outputs:
     Description: The edge cache Spot fleet request ID
     Value:
       Ref: edgeCacheSpotFleet
-  encodingEgressBucketId:
-    Description: The encoding egress S3 bucket ID
-    Value:
-      Ref: encodingEgressBucket
-  encodingIngressBucketId:
-    Description: The encoding ingress S3 bucket ID
-    Value:
-      Ref: encodingIngressBucket
-  encodingQueueArn:
-    Description: The encoding SQS queue ARN
-    Value:
-      Fn::GetAtt:
-      - encodingQueue
-      - Arn
-  encodingSpotFleetId:
-    Description: The encoding Spot fleet request ID
-    Value:
-      Ref: encodingSpotFleet
   primaryOriginElasticIp:
     Description: The primary origin Elastic IP
     Value:
@@ -176,6 +158,28 @@ Outputs:
     Description: The test stream Spot fleet request ID
     Value:
       Ref: testStreamSpotFleet
+  transcodingEgressBucketId:
+    Description: The transcoding egress S3 bucket ID
+    Value:
+      Ref: transcodingEgressBucket
+  transcodingIngressBucketId:
+    Description: The transcoding ingress S3 bucket ID
+    Value:
+      Ref: transcodingIngressBucket
+  transcodingQueueArn:
+    Description: The transcoding SQS queue ARN
+    Value:
+      Fn::GetAtt:
+      - transcodingQueue
+      - Arn
+  transcodingQueueUrl:
+    Description: The transcoding SQS queue URL
+    Value:
+      Ref: transcodingQueue
+  transcodingSpotFleetId:
+    Description: The transcoding Spot fleet request ID
+    Value:
+      Ref: transcodingSpotFleet
 Parameters:
   edgeCacheSpotFleetMaximumCapacity:
     Default: '6'
@@ -185,14 +189,6 @@ Parameters:
     Default: '2'
     Description: Number of EC2 Spot instances to initially launch in the edge cache Spot fleet
     Type: Number
-  encodingSpotFleetMaximumCapacity:
-    Default: '6'
-    Description: Maximum number of EC2 Spot instances to scale the encoding Spot fleet
-    Type: Number
-  encodingSpotFleetTargetCapacity:
-    Default: '1'
-    Description: Number of EC2 Spot instances to initially launch in the encoding Spot fleet
-    Type: Number
   keyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the EC2 instances
     Type: AWS::EC2::KeyPair::KeyName
@@ -201,6 +197,14 @@ Parameters:
     Description: Optional - CIDR/IP range for instance ssh access and encoder source - defaults
       to 0.0.0.0/0
     Type: String
+  transcodingSpotFleetMaximumCapacity:
+    Default: '6'
+    Description: Maximum number of EC2 Spot instances to scale the transcoding Spot fleet
+    Type: Number
+  transcodingSpotFleetTargetCapacity:
+    Default: '1'
+    Description: Number of EC2 Spot instances to initially launch in the transcoding Spot fleet
+    Type: Number
 Resources:
   applicationLoadBalancer:
     DependsOn:
@@ -296,8 +300,8 @@ Resources:
     - spotFleetInstanceProfile
     - originSecurityGroup
     - icmpSecurityGroup
-    - encodingIngressBucket
-    - encodingEgressBucket
+    - transcodingIngressBucket
+    - transcodingEgressBucket
     Properties:
       SpotFleetRequestConfigData:
         AllocationStrategy: diversified
@@ -336,7 +340,7 @@ Resources:
 
                 cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
-                REGION=${AWS::Region} INGRESSBUCKET=${encodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
                 ENI_ID=${backupOriginElasticNetworkInterface} ALLOCATION_ID=${backupOriginElasticIp.AllocationId}
                 WAITCONDITIONHANDLE="${backupOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-origin.sh
 
@@ -473,7 +477,7 @@ Resources:
     - primaryOriginSpotFleet
     - backupOriginSpotFleet
     - applicationLoadBalancerTargetGroup
-    - encodingEgressBucket
+    - transcodingEgressBucket
     Properties:
       SpotFleetRequestConfigData:
         AllocationStrategy: diversified
@@ -516,7 +520,7 @@ Resources:
                 cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
                 REGION=${AWS::Region} APPLICATIONLOADBALANCERTARGETGROUP=${applicationLoadBalancerTargetGroup}
-                CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup} EGRESSBUCKETWEBSITEURL=${encodingEgressBucket.WebsiteURL}
+                CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup} EGRESSBUCKETWEBSITEURL=${transcodingEgressBucket.WebsiteURL}
                 PRIMARYORIGINPRIVATEIP=${primaryOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
                 BACKUPORIGINPRIVATEIP=${backupOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
                 WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-edge.sh
@@ -559,229 +563,6 @@ Resources:
       Timeout: 900
     Type: AWS::CloudFormation::WaitCondition
   edgeCacheSpotFleetWaitConditionHandle:
-    Type: AWS::CloudFormation::WaitConditionHandle
-  encodingEgressBucket:
-    Properties:
-      AccessControl: PublicRead
-      CorsConfiguration:
-        CorsRules:
-        - AllowedHeaders:
-          - '*'
-          AllowedMethods:
-          - GET
-          AllowedOrigins:
-          - '*'
-          MaxAge: '3600'
-      WebsiteConfiguration:
-        IndexDocument: index.html
-    Type: AWS::S3::Bucket
-  encodingIngressBucket:
-    DependsOn:
-    - encodingQueue
-    - encodingQueuePolicy
-    Properties:
-      NotificationConfiguration:
-        QueueConfigurations:
-        - Event: s3:ObjectCreated:*
-          Queue:
-            Fn::GetAtt:
-            - encodingQueue
-            - Arn
-    Type: AWS::S3::Bucket
-  encodingQueue:
-    Properties:
-      VisibilityTimeout: 900
-    Type: AWS::SQS::Queue
-  encodingQueueDepthAlarmScaleDown:
-    DependsOn:
-    - encodingQueue
-    - encodingSpotFleetScalingPolicyScaleDown
-    Properties:
-      AlarmActions:
-      - Ref: encodingSpotFleetScalingPolicyScaleDown
-      AlarmDescription: Alarm if queue depth falls below 8 messages
-      ComparisonOperator: LessThanThreshold
-      Dimensions:
-      - Name: QueueName
-        Value:
-          Fn::GetAtt:
-          - encodingQueue
-          - QueueName
-      EvaluationPeriods: 2
-      MetricName: ApproximateNumberOfMessagesVisible
-      Namespace: AWS/SQS
-      Period: 300
-      Statistic: Sum
-      Threshold: 8
-    Type: AWS::CloudWatch::Alarm
-  encodingQueueDepthAlarmScaleUp:
-    DependsOn:
-    - encodingQueue
-    - encodingSpotFleetScalingPolicyScaleUp
-    Properties:
-      AlarmActions:
-      - Ref: encodingSpotFleetScalingPolicyScaleUp
-      AlarmDescription: Alarm if queue depth grows beyond 16 messages
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-      - Name: QueueName
-        Value:
-          Fn::GetAtt:
-          - encodingQueue
-          - QueueName
-      EvaluationPeriods: 2
-      MetricName: ApproximateNumberOfMessagesVisible
-      Namespace: AWS/SQS
-      Period: 300
-      Statistic: Sum
-      Threshold: 16
-    Type: AWS::CloudWatch::Alarm
-  encodingQueuePolicy:
-    DependsOn:
-    - encodingQueue
-    Properties:
-      PolicyDocument:
-        Statement:
-        - Action:
-          - sqs:SendMessage
-          Effect: Allow
-          Principal:
-            Service: s3.amazonaws.com
-          Resource: '*'
-        Version: 2012-10-17
-      Queues:
-      - Ref: encodingQueue
-    Type: AWS::SQS::QueuePolicy
-  encodingSecurityGroup:
-    DependsOn:
-    - vpc
-    Properties:
-      GroupDescription: Encoding Spot fleet instance security group
-      SecurityGroupIngress:
-      - CidrIp:
-          Ref: sourceCidr
-        FromPort: 22
-        IpProtocol: tcp
-        ToPort: 22
-      VpcId:
-        Ref: vpc
-    Type: AWS::EC2::SecurityGroup
-  encodingSpotFleet:
-    DependsOn:
-    - spotFleetRole
-    - spotFleetInstanceProfile
-    - encodingSecurityGroup
-    - icmpSecurityGroup
-    Properties:
-      SpotFleetRequestConfigData:
-        AllocationStrategy: diversified
-        IamFleetRole:
-          Fn::GetAtt:
-          - spotFleetRole
-          - Arn
-        LaunchSpecifications:
-        - IamInstanceProfile:
-            Arn:
-              Fn::GetAtt:
-              - spotFleetInstanceProfile
-              - Arn
-          ImageId:
-            Fn::FindInMap:
-            - amazonLinuxAmi
-            - Ref: AWS::Region
-            - AMI
-          InstanceType: c4.large
-          KeyName:
-            Ref: keyName
-          Monitoring:
-            Enabled: true
-          SecurityGroups:
-          - GroupId:
-              Ref: encodingSecurityGroup
-          - GroupId:
-              Ref: icmpSecurityGroup
-          SubnetId:
-            Fn::Join:
-            - ','
-            - - Ref: publicSubnet1
-              - Ref: publicSubnet2
-          UserData:
-            Fn::Base64:
-              Fn::Sub: '#!/bin/bash -xe
-
-                yum -y install git
-
-                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
-
-                REGION=${AWS::Region} EGRESSBUCKET=${encodingEgressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
-                WAITCONDITIONHANDLE="${encodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-encoding.sh
-
-                '
-        ReplaceUnhealthyInstances: true
-        SpotPrice: 1.705
-        TargetCapacity:
-          Ref: encodingSpotFleetTargetCapacity
-        TerminateInstancesWithExpiration: true
-    Type: AWS::EC2::SpotFleet
-  encodingSpotFleetScalableTarget:
-    DependsOn:
-    - encodingSpotFleet
-    - spotFleetAutoscaleRole
-    Properties:
-      MaxCapacity:
-        Ref: encodingSpotFleetMaximumCapacity
-      MinCapacity:
-        Ref: encodingSpotFleetTargetCapacity
-      ResourceId:
-        Fn::Join:
-        - /
-        - - spot-fleet-request
-          - Ref: encodingSpotFleet
-      RoleARN:
-        Fn::GetAtt:
-        - spotFleetAutoscaleRole
-        - Arn
-      ScalableDimension: ec2:spot-fleet-request:TargetCapacity
-      ServiceNamespace: ec2
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-  encodingSpotFleetScalingPolicyScaleDown:
-    Properties:
-      PolicyName: encodingSpotFleetScalingPolicyScaleDown
-      PolicyType: StepScaling
-      ScalingTargetId:
-        Ref: encodingSpotFleetScalableTarget
-      StepScalingPolicyConfiguration:
-        AdjustmentType: ChangeInCapacity
-        Cooldown: 300
-        MetricAggregationType: Average
-        StepAdjustments:
-        - MetricIntervalUpperBound: 0
-          ScalingAdjustment: -1
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-  encodingSpotFleetScalingPolicyScaleUp:
-    Properties:
-      PolicyName: encodingSpotFleetScalingPolicyScaleUp
-      PolicyType: StepScaling
-      ScalingTargetId:
-        Ref: encodingSpotFleetScalableTarget
-      StepScalingPolicyConfiguration:
-        AdjustmentType: ChangeInCapacity
-        Cooldown: 300
-        MetricAggregationType: Average
-        StepAdjustments:
-        - MetricIntervalLowerBound: 0
-          ScalingAdjustment: 1
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-  encodingSpotFleetWaitCondition:
-    DependsOn: encodingSpotFleetWaitConditionHandle
-    Properties:
-      Count:
-        Ref: encodingSpotFleetTargetCapacity
-      Handle:
-        Ref: encodingSpotFleetWaitConditionHandle
-      Timeout: 900
-    Type: AWS::CloudFormation::WaitCondition
-  encodingSpotFleetWaitConditionHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
   icmpSecurityGroup:
     DependsOn:
@@ -861,8 +642,8 @@ Resources:
     - spotFleetInstanceProfile
     - originSecurityGroup
     - icmpSecurityGroup
-    - encodingIngressBucket
-    - encodingEgressBucket
+    - transcodingIngressBucket
+    - transcodingEgressBucket
     - primaryOriginElasticNetworkInterface
     Properties:
       SpotFleetRequestConfigData:
@@ -902,7 +683,7 @@ Resources:
 
                 cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
-                REGION=${AWS::Region} INGRESSBUCKET=${encodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
                 ENI_ID=${primaryOriginElasticNetworkInterface} ALLOCATION_ID=${primaryOriginElasticIp.AllocationId}
                 WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-origin.sh
 
@@ -1051,14 +832,14 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-              - encodingQueue
+              - transcodingQueue
               - Arn
           Version: 2012-10-17
         PolicyName:
           Fn::Join:
           - '-'
           - - Ref: AWS::StackName
-            - encodingQueuePolicy
+            - transcodingQueuePolicy
       - PolicyDocument:
           Statement:
           - Action:
@@ -1110,17 +891,17 @@ Resources:
             - Fn::Join:
               - ''
               - - 'arn:aws:s3:::'
-                - Ref: encodingIngressBucket
+                - Ref: transcodingIngressBucket
             - Fn::Join:
               - ''
               - - 'arn:aws:s3:::'
-                - Ref: encodingEgressBucket
+                - Ref: transcodingEgressBucket
           Version: '2012-10-17'
         PolicyName:
           Fn::Join:
           - '-'
           - - Ref: AWS::StackName
-            - encodingBucketsListPolicy
+            - transcodingBucketsListPolicy
       - PolicyDocument:
           Statement:
           - Action:
@@ -1132,19 +913,19 @@ Resources:
             - Fn::Join:
               - ''
               - - 'arn:aws:s3:::'
-                - Ref: encodingIngressBucket
+                - Ref: transcodingIngressBucket
                 - /*
             - Fn::Join:
               - ''
               - - 'arn:aws:s3:::'
-                - Ref: encodingEgressBucket
+                - Ref: transcodingEgressBucket
                 - /*
           Version: '2012-10-17'
         PolicyName:
           Fn::Join:
           - '-'
           - - Ref: AWS::StackName
-            - encodingBucketsReadWritePolicy
+            - transcodingBucketsReadWritePolicy
     Type: AWS::IAM::Role
   spotFleetRole:
     Properties:
@@ -1282,6 +1063,230 @@ Resources:
         Memory: 2048
         Name: testStream
     Type: AWS::ECS::TaskDefinition
+  transcodingEgressBucket:
+    Properties:
+      AccessControl: PublicRead
+      CorsConfiguration:
+        CorsRules:
+        - AllowedHeaders:
+          - '*'
+          AllowedMethods:
+          - GET
+          AllowedOrigins:
+          - '*'
+          MaxAge: '3600'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+    Type: AWS::S3::Bucket
+  transcodingIngressBucket:
+    DependsOn:
+    - transcodingQueue
+    - transcodingQueuePolicy
+    Properties:
+      NotificationConfiguration:
+        QueueConfigurations:
+        - Event: s3:ObjectCreated:*
+          Queue:
+            Fn::GetAtt:
+            - transcodingQueue
+            - Arn
+    Type: AWS::S3::Bucket
+  transcodingQueue:
+    Properties:
+      VisibilityTimeout: 900
+    Type: AWS::SQS::Queue
+  transcodingQueueDepthAlarmScaleDown:
+    DependsOn:
+    - transcodingQueue
+    - transcodingSpotFleetScalingPolicyScaleDown
+    Properties:
+      AlarmActions:
+      - Ref: transcodingSpotFleetScalingPolicyScaleDown
+      AlarmDescription: Alarm if queue depth falls below 8 messages
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: QueueName
+        Value:
+          Fn::GetAtt:
+          - transcodingQueue
+          - QueueName
+      EvaluationPeriods: 2
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Period: 300
+      Statistic: Sum
+      Threshold: 8
+    Type: AWS::CloudWatch::Alarm
+  transcodingQueueDepthAlarmScaleUp:
+    DependsOn:
+    - transcodingQueue
+    - transcodingSpotFleetScalingPolicyScaleUp
+    Properties:
+      AlarmActions:
+      - Ref: transcodingSpotFleetScalingPolicyScaleUp
+      AlarmDescription: Alarm if queue depth grows beyond 16 messages
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: QueueName
+        Value:
+          Fn::GetAtt:
+          - transcodingQueue
+          - QueueName
+      EvaluationPeriods: 2
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Period: 300
+      Statistic: Sum
+      Threshold: 16
+    Type: AWS::CloudWatch::Alarm
+  transcodingQueuePolicy:
+    DependsOn:
+    - transcodingQueue
+    Properties:
+      PolicyDocument:
+        Statement:
+        - Action:
+          - sqs:SendMessage
+          Effect: Allow
+          Principal:
+            Service: s3.amazonaws.com
+          Resource: '*'
+        Version: 2012-10-17
+      Queues:
+      - Ref: transcodingQueue
+    Type: AWS::SQS::QueuePolicy
+  transcodingSecurityGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      GroupDescription: Transcoding Spot fleet instance security group
+      SecurityGroupIngress:
+      - CidrIp:
+          Ref: sourceCidr
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::SecurityGroup
+  transcodingSpotFleet:
+    DependsOn:
+    - spotFleetRole
+    - spotFleetInstanceProfile
+    - transcodingSecurityGroup
+    - icmpSecurityGroup
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: diversified
+        IamFleetRole:
+          Fn::GetAtt:
+          - spotFleetRole
+          - Arn
+        LaunchSpecifications:
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: c4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: transcodingSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                yum -y install git
+
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
+
+                REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} EGRESSBUCKET=${transcodingEgressBucket}
+                TRANSCODINGQUEUE=${transcodingQueue} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-transcoding.sh
+
+                '
+        ReplaceUnhealthyInstances: true
+        SpotPrice: 1.705
+        TargetCapacity:
+          Ref: transcodingSpotFleetTargetCapacity
+        TerminateInstancesWithExpiration: true
+    Type: AWS::EC2::SpotFleet
+  transcodingSpotFleetScalableTarget:
+    DependsOn:
+    - transcodingSpotFleet
+    - spotFleetAutoscaleRole
+    Properties:
+      MaxCapacity:
+        Ref: transcodingSpotFleetMaximumCapacity
+      MinCapacity:
+        Ref: transcodingSpotFleetTargetCapacity
+      ResourceId:
+        Fn::Join:
+        - /
+        - - spot-fleet-request
+          - Ref: transcodingSpotFleet
+      RoleARN:
+        Fn::GetAtt:
+        - spotFleetAutoscaleRole
+        - Arn
+      ScalableDimension: ec2:spot-fleet-request:TargetCapacity
+      ServiceNamespace: ec2
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+  transcodingSpotFleetScalingPolicyScaleDown:
+    Properties:
+      PolicyName: transcodingSpotFleetScalingPolicyScaleDown
+      PolicyType: StepScaling
+      ScalingTargetId:
+        Ref: transcodingSpotFleetScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalUpperBound: 0
+          ScalingAdjustment: -1
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  transcodingSpotFleetScalingPolicyScaleUp:
+    Properties:
+      PolicyName: transcodingSpotFleetScalingPolicyScaleUp
+      PolicyType: StepScaling
+      ScalingTargetId:
+        Ref: transcodingSpotFleetScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: 1
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  transcodingSpotFleetWaitCondition:
+    DependsOn: transcodingSpotFleetWaitConditionHandle
+    Properties:
+      Count:
+        Ref: transcodingSpotFleetTargetCapacity
+      Handle:
+        Ref: transcodingSpotFleetWaitConditionHandle
+      Timeout: 900
+    Type: AWS::CloudFormation::WaitCondition
+  transcodingSpotFleetWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
   vpc:
     Properties:
       CidrBlock:

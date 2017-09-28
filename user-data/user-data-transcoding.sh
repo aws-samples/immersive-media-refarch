@@ -19,9 +19,9 @@ cd /tmp && \
 echo '$SystemLogRateLimitInterval 2' >> /etc/rsyslog.conf
 echo '$SystemLogRateLimitBurst 500' >> /etc/rsyslog.conf
 
-cp -av /root/immersive-media-refarch/user-data/encoding/awslogs/awslogs.conf /etc/awslogs/
-cp -av /root/immersive-media-refarch/user-data/encoding/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
-cp -av /root/immersive-media-refarch/user-data/encoding/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
+cp -av /root/immersive-media-refarch/user-data/transcoding/awslogs/awslogs.conf /etc/awslogs/
+cp -av /root/immersive-media-refarch/user-data/transcoding/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
+cp -av /root/immersive-media-refarch/user-data/transcoding/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
 
 chmod +x /usr/local/bin/spot-instance-termination-notice-handler.sh
 
@@ -33,6 +33,6 @@ chkconfig awslogs on && service awslogs restart
 
 start spot-instance-termination-notice-handler
 
-aws s3 cp /root/immersive-media-refarch/user-data/encoding/client/index.html s3://$EGRESSBUCKET/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
+aws s3 cp /root/immersive-media-refarch/user-data/transcoding/client/index.html s3://$EGRESSBUCKET/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 
 /opt/aws/bin/cfn-signal -s true -i $INSTANCE_ID "$WAITCONDITIONHANDLE"

@@ -16,8 +16,8 @@ echo '$SystemLogRateLimitBurst 500' >> /etc/rsyslog.conf
 
 cp -av /root/immersive-media-refarch/user-data/edge/nginx/nginx.conf /etc/nginx/
 cp -av /root/immersive-media-refarch/user-data/edge/awslogs/awslogs.conf /etc/awslogs/
-cp -av /root/immersive-media-refarch/user-data/encoding/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
-cp -av /root/immersive-media-refarch/user-data/encoding/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
+cp -av /root/immersive-media-refarch/user-data/edge/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
+cp -av /root/immersive-media-refarch/user-data/edge/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
 
 chmod +x /usr/local/bin/spot-instance-termination-notice-handler.sh
 
