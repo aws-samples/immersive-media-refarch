@@ -1216,7 +1216,7 @@ Resources:
 
                 cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
-                REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} EGRESSBUCKET=${transcodingEgressBucket}
+                REGION=${AWS::Region} TRANSCODINGINGRESSBUCKET=${transcodingIngressBucket} TRANSCODINGEGRESSBUCKET=${transcodingEgressBucket}
                 TRANSCODINGQUEUE=${transcodingQueue} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
                 WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-transcoding.sh
 
