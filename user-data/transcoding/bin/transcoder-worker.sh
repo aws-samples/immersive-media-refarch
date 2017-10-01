@@ -17,6 +17,8 @@ while sleep 5; do
     continue
   fi
 
+  logger "$0: Found $MESSAGES in $TRANSCODINGQUEUE"
+
   JSON=$(aws sqs --output=json receive-message --queue-url $TRANSCODINGQUEUE)
   RECEIPT=$(echo "$JSON" | jq -r '.Messages[] | .ReceiptHandle')
   BODY=$(echo "$JSON" | jq -r '.Messages[] | .Body')
@@ -24,6 +26,8 @@ while sleep 5; do
 
   FNAME=$(echo $INPUT | rev | cut -f2 -d"." | rev | tr '[:upper:]' '[:lower:]')
   FEXT=$(echo $INPUT | rev | cut -f1 -d"." | rev | tr '[:upper:]' '[:lower:]')
+
+  logger: "$0: INPUT=$INPUT, FNAME=$FNAME, FEXT=$FEXT"
 
   if [ "$FEXT" == "mp4" ]; then
     mkdir /tmp/${FNAME}
