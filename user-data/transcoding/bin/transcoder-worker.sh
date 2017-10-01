@@ -17,7 +17,7 @@ while sleep 5; do
     continue
   fi
 
-  logger "$0: Found $MESSAGES in $TRANSCODINGQUEUE"
+  logger "$0: Found $MESSAGES messages in $TRANSCODINGQUEUE"
 
   JSON=$(aws sqs --output=json receive-message --queue-url $TRANSCODINGQUEUE)
   RECEIPT=$(echo "$JSON" | jq -r '.Messages[] | .ReceiptHandle')
@@ -27,11 +27,11 @@ while sleep 5; do
   FNAME=$(echo $INPUT | rev | cut -f2 -d"." | rev | tr '[:upper:]' '[:lower:]')
   FEXT=$(echo $INPUT | rev | cut -f1 -d"." | rev | tr '[:upper:]' '[:lower:]')
 
-  logger: "$0: INPUT=$INPUT, FNAME=$FNAME, FEXT=$FEXT"
+  logger "$0: INPUT=$INPUT, FNAME=$FNAME, FEXT=$FEXT"
 
   if [ "$FEXT" == "mp4" ]; then
-    mkdir /tmp/${FNAME}
-    cd /tmp/${FNAME}
+    mkdir -p /tmp/$FNAME
+    cd /tmp/$FNAME
     aws s3 cp s3://$TRANSCODINGINGRESSBUCKET/$INPUT .
     
     /usr/local/bin/ffmpeg -y -async 1 -vsync -1 -analyzeduration 999999999 -i ${INPUT} -threads $NUMPROCS \
@@ -79,6 +79,7 @@ EOT
 
     OUTPUT=$(echo $INPUT | rev | cut -f 2- -d '.' | rev)
     aws s3 cp --recursive /tmp/$FNAME s3://$TRANSCODINGEGRESSBUCKET/$FNAME
+    rm -rf /tmp/$FNAME
   fi
 
   if [ ! "$RECEIPT" == "" ]; then

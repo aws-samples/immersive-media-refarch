@@ -34,7 +34,6 @@ sed -i "s|%TRANSCODINGINGRESSBUCKET%|$TRANSCODINGINGRESSBUCKET|g" /usr/local/bin
 sed -i "s|%TRANSCODINGEGRESSBUCKET%|$TRANSCODINGEGRESSBUCKET|g" /usr/local/bin/transcoder-worker.sh
 sed -i "s|%TRANSCODINGQUEUE%|$TRANSCODINGQUEUE|g" /usr/local/bin/transcoder-worker.sh
 
-
 chkconfig rsyslog on && service rsyslog restart
 chkconfig awslogs on && service awslogs restart
 

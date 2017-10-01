@@ -26,5 +26,9 @@ DESTFILE="$2-$TIMESTAMP.mp4"
 # Transcode
 mkdir -p $S3FOLDER
 /usr/local/bin/ffmpeg -i $INPUTFILE -codec copy $S3FOLDER/$DESTFILE
+
 # Upload to S3 - and make sure owner has access to the file!
-aws s3 cp $INPUTFILE s3://$S3BUCKET/$DESTFILE --acl bucket-owner-full-control
+aws s3 cp $S3FOLDER/$DESTFILE s3://$S3BUCKET/$DESTFILE --acl bucket-owner-full-control
+
+# clean up
+rm -rf $S3FOLDER/$DESTFILE
