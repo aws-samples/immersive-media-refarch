@@ -27,10 +27,12 @@ while sleep 5; do
   FNAME=$(echo $INPUT | rev | cut -f2 -d"." | rev | tr '[:upper:]' '[:lower:]')
   FEXT=$(echo $INPUT | rev | cut -f1 -d"." | rev | tr '[:upper:]' '[:lower:]')
 
-  logger "$0: INPUT=$INPUT, FNAME=$FNAME, FEXT=$FEXT"
 
   if [ "$FEXT" == "mp4" ]; then
-    mkdir -p /tmp/$FNAME
+
+    logger "$0: Found work to transcode. Details: INPUT=$INPUT, FNAME=$FNAME, FEXT=$FEXT"
+
+    mkdir -pv /tmp/$FNAME
     cd /tmp/$FNAME
     aws s3 cp s3://$TRANSCODINGINGRESSBUCKET/$INPUT .
     
@@ -77,12 +79,16 @@ $FNAME-2160.M3U8
 $FNAME-AAC.M3U8 
 EOT
 
+    logger "$0: Transcoding done. Copying to S3 and cleaning up"
+
     OUTPUT=$(echo $INPUT | rev | cut -f 2- -d '.' | rev)
     aws s3 cp --recursive /tmp/$FNAME s3://$TRANSCODINGEGRESSBUCKET/$FNAME
     rm -rf /tmp/$FNAME
   fi
 
   if [ ! "$RECEIPT" == "" ]; then
+    logger "$0: Complete. Deleting message from queue"
+
     JSON=$(aws sqs --output=json delete-message --queue-url $TRANSCODINGQUEUE \
       --receipt-handle $RECEIPT)
   fi

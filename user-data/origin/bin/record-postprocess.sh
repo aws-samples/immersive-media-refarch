@@ -18,7 +18,7 @@ exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # Variables
 INPUTFILE="$1"
-S3BUCKET="%INGRESSBUCKET%/input"
+S3BUCKET="%INGRESSBUCKET%"
 S3FOLDER="/var/lib/nginx/s3"
 TIMESTAMP="`date +%s`"
 DESTFILE="$2-$TIMESTAMP.mp4"
