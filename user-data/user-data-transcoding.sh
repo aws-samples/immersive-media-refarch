@@ -41,6 +41,6 @@ chkconfig awslogs on && service awslogs restart
 start spot-instance-termination-notice-handler
 start transcoding-worker
 
-aws s3 cp /root/immersive-media-refarch/user-data/transcoding/client/index.html s3://$EGRESSBUCKET/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
+aws s3 cp /root/immersive-media-refarch/user-data/transcoding/client/index.html s3://$TRANSCODINGEGRESSBUCKET/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 
 /opt/aws/bin/cfn-signal -s true -i $INSTANCE_ID "$WAITCONDITIONHANDLE"

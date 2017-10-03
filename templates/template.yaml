@@ -1032,6 +1032,8 @@ Resources:
         - lavfi
         - -i
         - testsrc=size=1280x720:rate=30
+        - i
+        - anullsrc=channel_layout=stereo:sample_rate=44100
         - -vcodec
         - libx264
         - -vf
