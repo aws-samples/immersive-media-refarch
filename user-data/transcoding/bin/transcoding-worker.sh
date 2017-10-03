@@ -82,7 +82,7 @@ EOT
     logger "$0: Transcoding done. Copying to S3 and cleaning up"
 
     OUTPUT=$(echo $INPUT | rev | cut -f 2- -d '.' | rev)
-    aws s3 cp --recursive /tmp/$FNAME s3://$TRANSCODINGEGRESSBUCKET/$FNAME
+    aws s3 cp --recursive /tmp/$FNAME s3://$TRANSCODINGEGRESSBUCKET/$FNAME --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
     rm -rf /tmp/$FNAME
   fi
 
