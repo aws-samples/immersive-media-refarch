@@ -182,28 +182,32 @@ Outputs:
       Ref: transcodingSpotFleet
 Parameters:
   edgeCacheSpotFleetMaximumCapacity:
-    Default: '6'
-    Description: Maximum number of EC2 Spot instances to scale the edge cache Spot fleet
+    Default: 6
+    Description: Maximum number of EC2 Spot Instances to scale the edge cache Spot fleet
     Type: Number
   edgeCacheSpotFleetTargetCapacity:
-    Default: '2'
-    Description: Number of EC2 Spot instances to initially launch in the edge cache Spot fleet
+    Default: 2
+    Description: Number of EC2 Spot Instances to initially launch in the edge cache Spot fleet
     Type: Number
   keyName:
-    Description: Name of an existing EC2 KeyPair to enable SSH access to the EC2 instances
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the EC2 Instances
     Type: AWS::EC2::KeyPair::KeyName
   sourceCidr:
     Default: 0.0.0.0/0
     Description: Optional - CIDR/IP range for instance ssh access and encoder source - defaults
       to 0.0.0.0/0
     Type: String
+  spotInstancePrice:
+    Default: 0.159
+    Description: Maximum Spot Instance price per hour per instance
+    Type: Number
   transcodingSpotFleetMaximumCapacity:
-    Default: '6'
-    Description: Maximum number of EC2 Spot instances to scale the transcoding Spot fleet
+    Default: 6
+    Description: Maximum number of EC2 Spot Instances to scale the transcoding Spot fleet
     Type: Number
   transcodingSpotFleetTargetCapacity:
-    Default: '1'
-    Description: Number of EC2 Spot instances to initially launch in the transcoding Spot fleet
+    Default: 1
+    Description: Number of EC2 Spot Instances to initially launch in the transcoding Spot fleet
     Type: Number
 Resources:
   applicationLoadBalancer:
@@ -320,7 +324,42 @@ Resources:
             - amazonLinuxAmi
             - Ref: AWS::Region
             - AMI
-          InstanceType: c4.xlarge
+          InstanceType: c4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: originSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Ref: publicSubnet2
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                yum -y install git
+
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
+
+                REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                ENI_ID=${backupOriginElasticNetworkInterface} ALLOCATION_ID=${backupOriginElasticIp.AllocationId}
+                WAITCONDITIONHANDLE="${backupOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-origin.sh
+
+                '
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: m4.large
           KeyName:
             Ref: keyName
           Monitoring:
@@ -346,7 +385,8 @@ Resources:
 
                 '
         ReplaceUnhealthyInstances: true
-        SpotPrice: 1.705
+        SpotPrice:
+          Ref: spotInstancePrice
         TargetCapacity: 1
         TerminateInstancesWithExpiration: true
     Type: AWS::EC2::SpotFleet
@@ -526,8 +566,49 @@ Resources:
                 WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-edge.sh
 
                 '
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: m4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: edgeCacheSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                yum -y install git
+
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
+
+                REGION=${AWS::Region} APPLICATIONLOADBALANCERTARGETGROUP=${applicationLoadBalancerTargetGroup}
+                CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup} EGRESSBUCKETWEBSITEURL=${transcodingEgressBucket.WebsiteURL}
+                PRIMARYORIGINPRIVATEIP=${primaryOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
+                BACKUPORIGINPRIVATEIP=${backupOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
+                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-edge.sh
+
+                '
         ReplaceUnhealthyInstances: true
-        SpotPrice: 1.705
+        SpotPrice:
+          Ref: spotInstancePrice
         TargetCapacity:
           Ref: edgeCacheSpotFleetTargetCapacity
         TerminateInstancesWithExpiration: true
@@ -663,7 +744,42 @@ Resources:
             - amazonLinuxAmi
             - Ref: AWS::Region
             - AMI
-          InstanceType: c4.xlarge
+          InstanceType: c4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: originSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Ref: publicSubnet1
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                yum -y install git
+
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
+
+                REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                ENI_ID=${primaryOriginElasticNetworkInterface} ALLOCATION_ID=${primaryOriginElasticIp.AllocationId}
+                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-origin.sh
+
+                '
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: m4.large
           KeyName:
             Ref: keyName
           Monitoring:
@@ -689,7 +805,8 @@ Resources:
 
                 '
         ReplaceUnhealthyInstances: true
-        SpotPrice: 1.705
+        SpotPrice:
+          Ref: spotInstancePrice
         TargetCapacity: 1
         TerminateInstancesWithExpiration: true
     Type: AWS::EC2::SpotFleet
@@ -983,7 +1100,41 @@ Resources:
             - ecsOptimizedAmi
             - Ref: AWS::Region
             - AMI
-          InstanceType: c4.xlarge
+          InstanceType: c4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: originSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Ref: publicSubnet1
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                yum -y install git
+
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
+
+                REGION=${AWS::Region} ECS_CLUSTER=${testStreamEcsCluster} WAITCONDITIONHANDLE="${testStreamSpotFleetWaitConditionHandle}"
+                bash /root/immersive-media-refarch/user-data/user-data-test.sh
+
+                '
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - ecsOptimizedAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: m4.large
           KeyName:
             Ref: keyName
           Monitoring:
@@ -1008,7 +1159,8 @@ Resources:
 
                 '
         ReplaceUnhealthyInstances: true
-        SpotPrice: 1.705
+        SpotPrice:
+          Ref: spotInstancePrice
         TargetCapacity: 1
         TerminateInstancesWithExpiration: true
     Type: AWS::EC2::SpotFleet
@@ -1225,8 +1377,47 @@ Resources:
                 WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-transcoding.sh
 
                 '
+        - IamInstanceProfile:
+            Arn:
+              Fn::GetAtt:
+              - spotFleetInstanceProfile
+              - Arn
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: m4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: transcodingSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                yum -y install git
+
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
+
+                REGION=${AWS::Region} TRANSCODINGINGRESSBUCKET=${transcodingIngressBucket} TRANSCODINGEGRESSBUCKET=${transcodingEgressBucket}
+                TRANSCODINGQUEUE=${transcodingQueue} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
+                WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/user-data/user-data-transcoding.sh
+
+                '
         ReplaceUnhealthyInstances: true
-        SpotPrice: 1.705
+        SpotPrice:
+          Ref: spotInstancePrice
         TargetCapacity:
           Ref: transcodingSpotFleetTargetCapacity
         TerminateInstancesWithExpiration: true
@@ -1302,6 +1493,6 @@ Resources:
       EnableDnsSupport: true
       Tags:
       - Key: Name
-        Value: VPC for Running a Highly Scalable Immersive Media Solution on EC2 Spot instances
+        Value: VPC for Running a Highly Scalable Immersive Media Solution on EC2 Spot Instances
     Type: AWS::EC2::VPC
 ...
