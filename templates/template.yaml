@@ -1192,12 +1192,14 @@ Resources:
         - libx264
         - -vf
         - format=yuv420p
-        - -b:v
+        - -x264opts 
+        - keyint=60:min-keyint=60:scenecut=-1
+        - -b:v 
         - 1000k
         - -c:a
         - aac
         - -b:a
-        - 160k
+        - 128k
         - -f
         - flv
         - Fn::Join:
