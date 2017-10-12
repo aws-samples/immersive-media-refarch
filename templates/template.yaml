@@ -324,7 +324,7 @@ Resources:
             - amazonLinuxAmi
             - Ref: AWS::Region
             - AMI
-          InstanceType: c4.large
+          InstanceType: c4.xlarge
           KeyName:
             Ref: keyName
           Monitoring:
@@ -744,7 +744,7 @@ Resources:
             - amazonLinuxAmi
             - Ref: AWS::Region
             - AMI
-          InstanceType: c4.large
+          InstanceType: c4.xlarge
           KeyName:
             Ref: keyName
           Monitoring:
