@@ -1100,7 +1100,7 @@ Resources:
             - ecsOptimizedAmi
             - Ref: AWS::Region
             - AMI
-          InstanceType: c4.2xlarge
+          InstanceType: c4.large
           KeyName:
             Ref: keyName
           Monitoring:
@@ -1183,13 +1183,15 @@ Resources:
         - -f
         - lavfi
         - -i
-        - testsrc=size=3840x2160:rate=30
+        - testsrc=size=1280x720:rate=30
         - -f
         - lavfi
         - -i
         - anullsrc=channel_layout=stereo:sample_rate=44100
         - -vcodec
         - libx264
+        - -preset
+        - ultrafast
         - -vf
         - format=yuv420p
         - -x264opts 
@@ -1218,7 +1220,7 @@ Resources:
             awslogs-region:
               Ref: AWS::Region
             awslogs-stream-prefix: ecs
-        Memory: 14336
+        Memory: 2046
         Name: testStream
     Type: AWS::ECS::TaskDefinition
   transcodingEgressBucket:
