@@ -105,7 +105,7 @@ Outputs:
         - Fn::GetAtt:
           - cloudFrontDistribution
           - DomainName
-        - /hls/test.m3u8
+        - /testhls/test.m3u8
   clientWebsiteUrl:
     Description: URL for the website hosted on S3
     Value:
@@ -1210,7 +1210,7 @@ Resources:
             - Fn::GetAtt:
               - primaryOriginElasticNetworkInterface
               - PrimaryPrivateIpAddress
-            - :1935/live/test
+            - :1935/qa/test
         Image: jrottenberg/ffmpeg
         LogConfiguration:
           LogDriver: awslogs
