@@ -39,7 +39,8 @@
   </head>
   <body>
     <a-scene>
-      <a-assets timeout="10000">
+      <!-- explicitly setting timeout value low to prevent hanging browser on load -->
+      <a-assets timeout="1000">
         <video id="video" src="" autoplay loop crossorigin="anonymous"></video>
       </a-assets>
       <a-videosphere src="#video" rotation="0 180 0"></a-videosphere>

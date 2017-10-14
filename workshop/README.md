@@ -22,6 +22,13 @@ _Lab 1_
 
 # Cleanup and Disclaimer
 
+# Test Source
+
+Before we start, it's beneficial to determine where your live source will originate from. In the real-world, most live sources will start at a users home (webcam), a stadium (live production), or even a broadcast downlink facility. To effectively contribute these feeds to our infrastructure running on AWS, we need to consider the data rate and network charactaristics.
+
+- Dedicated bandwidth
+- public internet
+
 # Lab 1
 
 In this lab we will build a basic live streaming system using open source software. From this basic system we will be able to view a 360-degree live stream coming from a camera, but more importantly, we can use it as the basis to build in best-practices and introduce new features later in this workshop.
