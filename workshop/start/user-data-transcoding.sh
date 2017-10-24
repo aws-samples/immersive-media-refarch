@@ -19,11 +19,11 @@ cd /tmp && \
 echo '$SystemLogRateLimitInterval 2' >> /etc/rsyslog.conf
 echo '$SystemLogRateLimitBurst 500' >> /etc/rsyslog.conf
 
-cp -av /root/immersive-media-refarch/workshop/lab3/transcoding/awslogs/awslogs.conf /etc/awslogs/
-cp -av /root/immersive-media-refarch/workshop/lab3/transcoding/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
-cp -av /root/immersive-media-refarch/workshop/lab3/transcoding/init/transcoding-worker.conf /etc/init/transcoding-worker.conf
-cp -av /root/immersive-media-refarch/workshop/lab3/transcoding/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
-cp -av /root/immersive-media-refarch/workshop/lab3/transcoding/bin/transcoding-worker.sh /usr/local/bin
+cp -av /root/immersive-media-refarch/workshop/start/transcoding/awslogs/awslogs.conf /etc/awslogs/
+cp -av /root/immersive-media-refarch/workshop/start/transcoding/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
+cp -av /root/immersive-media-refarch/workshop/start/transcoding/init/transcoding-worker.conf /etc/init/transcoding-worker.conf
+cp -av /root/immersive-media-refarch/workshop/start/transcoding/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
+cp -av /root/immersive-media-refarch/workshop/start/transcoding/bin/transcoding-worker.sh /usr/local/bin
 
 chmod +x /usr/local/bin/spot-instance-termination-notice-handler.sh
 chmod +x /usr/local/bin/transcoding-worker.sh
@@ -41,6 +41,6 @@ chkconfig awslogs on && service awslogs restart
 start spot-instance-termination-notice-handler
 start transcoding-worker
 
-aws s3 cp /root/immersive-media-refarch/workshop/lab3/transcoding/client/index.html s3://$TRANSCODINGEGRESSBUCKET/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
+aws s3 cp /root/immersive-media-refarch/workshop/start/transcoding/client/index.html s3://$TRANSCODINGEGRESSBUCKET/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 
 /opt/aws/bin/cfn-signal -s true -i $INSTANCE_ID "$WAITCONDITIONHANDLE"

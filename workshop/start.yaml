@@ -5,6 +5,8 @@ Mappings:
   CidrMappings:
     public-subnet-1:
       CIDR: 10.0.1.0/24
+    public-subnet-2:
+      CIDR: 10.0.2.0/24
     vpc:
       CIDR: 10.0.0.0/16
   amazonLinuxAmi:
@@ -149,6 +151,7 @@ Resources:
       - Ref: applicationLoadBalancerSecurityGroup
       Subnets:
       - Ref: publicSubnet1
+      - Ref: publicSubnet2
       Tags:
       - Key: Name
         Value: Application Load Balancer
@@ -252,7 +255,6 @@ Resources:
     - edgeCacheSecurityGroup
     - icmpSecurityGroup
     - primaryOriginSpotFleet
-    - backupOriginSpotFleet
     - applicationLoadBalancerTargetGroup
     - transcodingEgressBucket
     Properties:
@@ -284,7 +286,10 @@ Resources:
           - GroupId:
               Ref: icmpSecurityGroup
           SubnetId:
-            - Ref: publicSubnet1
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
           UserData:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
@@ -296,8 +301,7 @@ Resources:
                 REGION=${AWS::Region} APPLICATIONLOADBALANCERTARGETGROUP=${applicationLoadBalancerTargetGroup}
                 CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup} EGRESSBUCKETWEBSITEURL=${transcodingEgressBucket.WebsiteURL}
                 PRIMARYORIGINPRIVATEIP=${primaryOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
-                BACKUPORIGINPRIVATEIP=${backupOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
-                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/lab3/user-data-edge.sh
+                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/start/user-data-edge.sh
 
                 '
         - IamInstanceProfile:
@@ -321,7 +325,10 @@ Resources:
           - GroupId:
               Ref: icmpSecurityGroup
           SubnetId:
-            - Ref: publicSubnet1
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
           UserData:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
@@ -333,8 +340,7 @@ Resources:
                 REGION=${AWS::Region} APPLICATIONLOADBALANCERTARGETGROUP=${applicationLoadBalancerTargetGroup}
                 CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup} EGRESSBUCKETWEBSITEURL=${transcodingEgressBucket.WebsiteURL}
                 PRIMARYORIGINPRIVATEIP=${primaryOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
-                BACKUPORIGINPRIVATEIP=${backupOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
-                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/lab3/user-data-edge.sh
+                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/start/user-data-edge.sh
 
                 '
         ReplaceUnhealthyInstances: true
@@ -497,7 +503,7 @@ Resources:
 
                 REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
                 ENI_ID=${primaryOriginElasticNetworkInterface} ALLOCATION_ID=${primaryOriginElasticIp.AllocationId}
-                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/lab3/user-data-origin.sh
+                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/start/user-data-origin.sh
 
                 '
         - IamInstanceProfile:
@@ -532,7 +538,7 @@ Resources:
 
                 REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
                 ENI_ID=${primaryOriginElasticNetworkInterface} ALLOCATION_ID=${primaryOriginElasticIp.AllocationId}
-                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/lab3/user-data-origin.sh
+                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/start/user-data-origin.sh
 
                 '
         ReplaceUnhealthyInstances: true
@@ -594,6 +600,37 @@ Resources:
       VpcId:
         Ref: vpc
     Type: AWS::EC2::Subnet
+  publicSubnet2:
+    DependsOn: attachGateway
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - 1
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock:
+        Fn::FindInMap:
+        - CidrMappings
+        - public-subnet-2
+        - CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: Public Subnet 2
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::Subnet
+  publicSubnet2RouteTableAssociation:
+    DependsOn:
+    - publicRouteTable
+    - publicSubnet2
+    - attachGateway
+    Properties:
+      RouteTableId:
+        Ref: publicRouteTable
+      SubnetId:
+        Ref: publicSubnet2
+    Type: AWS::EC2::SubnetRouteTableAssociation
   publicSubnet1RouteTableAssociation:
     DependsOn:
     - publicRouteTable
@@ -900,7 +937,10 @@ Resources:
           - GroupId:
               Ref: icmpSecurityGroup
           SubnetId:
-            - Ref: publicSubnet1
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
           UserData:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
@@ -911,7 +951,7 @@ Resources:
 
                 REGION=${AWS::Region} TRANSCODINGINGRESSBUCKET=${transcodingIngressBucket} TRANSCODINGEGRESSBUCKET=${transcodingEgressBucket}
                 TRANSCODINGQUEUE=${transcodingQueue} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
-                WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/lab3/user-data-transcoding.sh
+                WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/start/user-data-transcoding.sh
 
                 '
         - IamInstanceProfile:
@@ -935,7 +975,10 @@ Resources:
           - GroupId:
               Ref: icmpSecurityGroup
           SubnetId:
-            - Ref: publicSubnet1
+            Fn::Join:
+            - ','
+            - - Ref: publicSubnet1
+              - Ref: publicSubnet2
           UserData:
             Fn::Base64:
               Fn::Sub: '#!/bin/bash -xe
@@ -946,7 +989,7 @@ Resources:
 
                 REGION=${AWS::Region} TRANSCODINGINGRESSBUCKET=${transcodingIngressBucket} TRANSCODINGEGRESSBUCKET=${transcodingEgressBucket}
                 TRANSCODINGQUEUE=${transcodingQueue} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
-                WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/lab3/user-data-transcoding.sh
+                WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/start/user-data-transcoding.sh
 
                 '
         ReplaceUnhealthyInstances: true

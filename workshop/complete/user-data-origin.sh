@@ -53,12 +53,12 @@ echo "include /etc/nginx/rtmp.d/*.conf;" >> /etc/nginx/nginx.conf
 
 sed -i "s|worker_processes auto|worker_processes 1|g" /etc/nginx/nginx.conf
 
-cp -av /root/immersive-media-refarch/workshop/lab3/origin/nginx/default.d/rtmp.conf /etc/nginx/default.d/
-cp -av /root/immersive-media-refarch/workshop/lab3/origin/nginx/rtmp.d/rtmp.conf /etc/nginx/rtmp.d/
-cp -av /root/immersive-media-refarch/workshop/lab3/origin/awslogs/awslogs.conf /etc/awslogs/
-cp -av /root/immersive-media-refarch/workshop/lab3/origin/bin/record-postprocess.sh /usr/local/bin/
-cp -av /root/immersive-media-refarch/workshop/lab3/origin/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
-cp -av /root/immersive-media-refarch/workshop/lab3/origin/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
+cp -av /root/immersive-media-refarch/workshop/complete/origin/nginx/default.d/rtmp.conf /etc/nginx/default.d/
+cp -av /root/immersive-media-refarch/workshop/complete/origin/nginx/rtmp.d/rtmp.conf /etc/nginx/rtmp.d/
+cp -av /root/immersive-media-refarch/workshop/complete/origin/awslogs/awslogs.conf /etc/awslogs/
+cp -av /root/immersive-media-refarch/workshop/complete/origin/bin/record-postprocess.sh /usr/local/bin/
+cp -av /root/immersive-media-refarch/workshop/complete/origin/init/spot-instance-termination-notice-handler.conf /etc/init/spot-instance-termination-notice-handler.conf
+cp -av /root/immersive-media-refarch/workshop/complete/origin/bin/spot-instance-termination-notice-handler.sh /usr/local/bin/
 
 chmod +x /usr/local/bin/spot-instance-termination-notice-handler.sh
 
