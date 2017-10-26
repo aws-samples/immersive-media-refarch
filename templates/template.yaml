@@ -1253,7 +1253,7 @@ Resources:
     Type: AWS::S3::Bucket
   transcodingQueue:
     Properties:
-      VisibilityTimeout: 900
+      VisibilityTimeout: 7200
     Type: AWS::SQS::Queue
   transcodingQueueDepthAlarmScaleDown:
     DependsOn:

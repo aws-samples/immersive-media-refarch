@@ -9,6 +9,18 @@ yum -y update aws-cli
 yum -y install \
   awslogs jq
 
+# for workshop only, update java and install jmeter
+yum -y install \
+  java-1.8.0
+
+yum -y remove \
+  java-1.7.0-openjdk
+
+cd /tmp && \
+  curl -O http://apache.mirrors.lucidnetworks.net//jmeter/binaries/apache-jmeter-3.3.tgz && \
+  tar Jxf apache-jmeter-3.3.tgz && \
+  cp apache-jmeter-3.3/bin/jmeter /usr/local/bin
+
 aws configure set default.region $REGION
 
 cd /tmp && \
