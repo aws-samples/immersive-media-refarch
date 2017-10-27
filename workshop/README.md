@@ -207,31 +207,49 @@ Next, update the ?url= query parameter with the newly created m3u8 URL and confi
 <pre>http://_**transcodingEgressBucketId**_?url=https://s3-us-west-2.amazonaws.com/labz-transcodingegressbucket-17kb7fa5igln5/test-1508866984/MANIFEST.M3U8
 </pre>
 
-You've successfully modified the architecture to record the live stream, transcode it with EC2, and distribute it with an S3 bucket. Great work! 
+You've successfully modified the architecture to record the live stream, transcode it with EC2, and distribute it with an S3 bucket. Great work! With our live stream and VOD recording functional, let's turn to scalability.
 
 
 ## Lab 3 - CDN and Caching
 
-With our live stream and VOD recording functional, let's turn to scalability. The origin can handle a few simultanious users, maybe hundreds, but what about millions?
+### Generating Load
 
-### Simulated Test
+In the previous two labs, you used a web browser to play the stream. This worked well for functional testing, but now you need to simulate many simultanious client requests to ensure the system scales properly. [Apache Jmeter](https://jmeter.apache.org/) is a Java based test framework that simulates client load at scale. The details of the Jmeter configuration are outside the scope of this workshop, but we'd encourage you to browse the documentation to understand the terminology.
 
-Up until now, you've utilized a local web browser to play the stream, which works well for functional testing, but how will you simulate many clients requesting the stream simultaniously? [Apache Jmeter](https://jmeter.apache.org/) is a Java based test framework that simulates client requests at scale. The details of the configuration are outside the scope of this workshop, but we'd encourage you to browse the getting started documentation to understand the terminology.
+In the real-world, load testing is typically part of a development/test pipeline, possibly even automated with services like Codepipeline and Codedeploy. For educational purposes, Jmeter will run on one of the _**transcodingSpotFleet**_ instances. Jmeter has already been installed and the required .jmx configuration is located in /home/ec2-user/.
 
-In the real-world, include load testing as part of the development pipeline. Possibly even automating the tests with services like Codepipeline and Codedeploy. For educational purposes, Jmeter will run on the Origin. The configuration is included as part of this repository 
-
-
-
-<pre>$ ./jmeter -n -t ~/Projects/jmeter/lab.jmx -l results-origin-130345.txt -e -o cache-13034534/ -Jhost 34.212.89.15 -Jthreads=50 -Jrampup=15</pre>
+In addition to generating load, Jmeter can produce basic results visualization. This will prove useful in comparing the performance of each tier.
 
 {architecture diagram}
 
 ### Origin
 
+1\. SSH into one of the transcoding EC2 instances. You can find this by searching 'transocding' in the EC2 console.
+
+<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>transcodingInstance</b></i></pre>
+
+
+2\. Run jmeter replacing the -Jhost flag with the **_originElasticIpAddress_**. This test will run for 3 minutes, simulating 50 clients, ramping up over a period of 15 seconds. A log of the test will be stored in results.txt and an HTML webpage will be generated in origin/
+
+(maybe we can put this page somewhere hosted by nginx????)
+
+<pre>$ ./jmeter -n -t ~/lab.jmx -l origin.txt -e -o origin/ -Jhost <b><i>originElasticIpAddress</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
+
+3\. In the EC2 console, you can watch the load test impact CPU in near real-time by selecting the instance, then the _Monitoring_ tab.
+
+4\. By placing results in the /results/ directory with the Jmeter CLI, we can now access them via a web browser. After Jmeter has completed, simply point a browser to the instance.
+
+<pre>http://<b><i>transcodingInstanceIp</b></i>/results/origin/</pre> 
+
+5\. Note the average latency, percentiles, etc. and keep this tab open. We'll be comparing this information later.
+
 
 ### Cache
 
 but a cache within our infrastructure can also reduce origin load, while protecting the all-important origin from unforseen CDN issues or the [thundering herd problem](https://www.wikiwand.com/en/Thundering_herd_problem) during a big live event.
+
+
+<pre>$ ./jmeter -n -t ~/lab.jmx -l cache.txt -e -o cache/ -Jhost <b><i>originElasticIpAddress</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
 
 ### Content Delivery Network
 
@@ -243,6 +261,8 @@ Introducing a Content Delivery Network (CDN) is a common strategy to improve cli
 3. Configure our origin (ALB)
 4. Use test client to play back the stream, now with Cloudfront URL
 use cURL to confirm caching
+
+<pre>$ ./jmeter -n -t ~/lab.jmx -l cdn.txt -e -o cdn/ -Jhost <b><i>originElasticIpAddress</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
 
 ## Extra Credit
 
