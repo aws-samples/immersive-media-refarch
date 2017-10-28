@@ -214,64 +214,102 @@ You've successfully modified the architecture to record the live stream, transco
 
 ### Generating Load
 
-In the previous two labs, you used a web browser to play the stream. This worked well for functional testing, but now you need to simulate many simultanious client requests to ensure the system scales properly. [Apache Jmeter](https://jmeter.apache.org/) is a Java based test framework that simulates client load at scale. The details of the Jmeter configuration are outside the scope of this workshop, but we'd encourage you to browse the documentation to understand the terminology.
+In the previous two labs, a web browser retrieved the stream. This worked well for playback testing, but now you need to simulate many simultanious client requests to ensure the system scales properly. [Apache Jmeter](https://jmeter.apache.org/) is a Java based test framework that simulates client load at scale. The Jmeter configuration is outside of the workshop scope, but we encourage you to browse the documentation.
 
 In the real-world, load testing is typically part of a development/test pipeline, possibly even automated with services like Codepipeline and Codedeploy. For educational purposes, Jmeter will run on one of the _**transcodingSpotFleet**_ instances. Jmeter has already been installed and the required .jmx configuration is located in /home/ec2-user/.
 
-In addition to generating load, Jmeter can produce basic results visualization. This will prove useful in comparing the performance of each tier.
+In addition to generating load, Jmeter can produce basic results visualization. This will prove useful in representing the value of each tier as it pertains to simulated client experience. 
+
+Average Response Time
+P90
+Frustration metric
 
 {architecture diagram}
 
 ### Origin
 
-1\. SSH into one of the transcoding EC2 instances. You can find this by searching 'transocding' in the EC2 console.
+1\. SSH into one of the transcoding EC2 instances. You can find this by searching 'transcoding' in the EC2 console.
 
 <pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>transcodingInstance</b></i></pre>
 
 
-2\. Run jmeter replacing the -Jhost flag with the **_originElasticIpAddress_**. This test will run for 3 minutes, simulating 50 clients, ramping up over a period of 15 seconds. A log of the test will be stored in results.txt and an HTML webpage will be generated in origin/
+2\. Run jmeter replacing the -Jhost flag with the **_originElasticIpAddress_**. This test will run for 3 minutes, simulating 50 clients, ramping up over a period of 15 seconds. A log of the test will be stored in results.txt and an HTML webpage will be generated in origin/ ## TODO
 
 (maybe we can put this page somewhere hosted by nginx????)
 
-<pre>$ ./jmeter -n -t ~/lab.jmx -l origin.txt -e -o origin/ -Jhost <b><i>originElasticIpAddress</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
+<pre>$ ./jmeter -n -t ~/lab.jmx -l /var/www/html/results/origin.txt -e -o /var/www/html/results/origin/ -Jhost <b><i>originElasticIpAddress</b></i> -Jthreads=50 -Jrampup=15</pre>
 
 3\. In the EC2 console, you can watch the load test impact CPU in near real-time by selecting the instance, then the _Monitoring_ tab.
 
-4\. By placing results in the /results/ directory with the Jmeter CLI, we can now access them via a web browser. After Jmeter has completed, simply point a browser to the instance.
+4\. When Jmeter is complete, you can access the results via a web browser
 
 <pre>http://<b><i>transcodingInstanceIp</b></i>/results/origin/</pre> 
 
-5\. Note the average latency, percentiles, etc. and keep this tab open. We'll be comparing this information later.
+5\. Note the average latency, percentiles, etc. Not bad for a single instance! Keep this tab open and compare the origin performance, with that of the cache and CDN to uncover the value of those additional tiers. 
 
 
 ### Cache
 
-but a cache within our infrastructure can also reduce origin load, while protecting the all-important origin from unforseen CDN issues or the [thundering herd problem](https://www.wikiwand.com/en/Thundering_herd_problem) during a big live event.
+A [proxy cache](https://www.wikiwand.com/en/Web_cache) will help reduce origin load, while protecting the all-important origin from unforseen CDN issues or the [thundering herd problem](https://www.wikiwand.com/en/Thundering_herd_problem) during a large scale live event. 
+
+**_edgeCacheSpotFleet_** has been built using an Application Load Balancer in conjuntion with a fleet of EC2 instances from and EC2 Spot Fleet request. Let's test this tier to see how it benefits the overall performance of the system.
+
+UPDATE With HLS, child manifests will be updating frequently. To prevent caching a manifest for too long and, thus, serving a _stale_ manifest, you can use Cach Behaviors to control the cache. By default Cloudformation will respect the Cache-Control headers provided by the upstream servers.
+
+UPDATE something about cache nodes not storing state, being ephemeral and protection
 
 
-<pre>$ ./jmeter -n -t ~/lab.jmx -l cache.txt -e -o cache/ -Jhost <b><i>originElasticIpAddress</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
+### Upstream 
+
+1\. SSH into one of the transcoding instances if you haven't already done so.
+
+<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>transcodingInstance</b></i></pre>
+
+2\. Run the same Jmeter load test, this time updating the -Jhost flag to point to the DNS of ALB
+<pre>$ ./jmeter -n -t ~/lab.jmx -l cache.txt -e -o cache/ -Jhost <b><i>applicationLoadBalancerDns</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
+
+3\. In the EC2 console, watch the load test impact origin CPU in near real-time by selecting the instance, then the _Monitoring_ tab. Can you see how the origin suffers much less when a cache is in place?
+
+4\. When Jmeter is complete, you can access the results via a web browser
+
+<pre>http://<b><i>transcodingInstanceIp</b></i>/results/cache/</pre>
+
+5\. Note the average latency, percentiles, etc. for the cache and compare against just using the origin. Faster response times and less origin load, nice!
+
 
 ### Content Delivery Network
 
-Introducing a Content Delivery Network (CDN) is a common strategy to improve client performance while lowering the overall load on your backend origin.
+Introducing a Content Delivery Network (CDN) is another common strategy to improve client performance while lowering the overall load on the backend. We have not configured the CDN as part of this lab, so you'll need to set up Cloudfront before testing.
 
+1\. Open the Cloudfront console, click Create Distribution, then Get Started under the Web heading
 
-1. deploy lab3 cfn template creating a cache tier and application load balancer in front of it
-2. Create a new Cloudfront distribution
-3. Configure our origin (ALB)
-4. Use test client to play back the stream, now with Cloudfront URL
-use cURL to confirm caching
+2\. Configure the Distribution by populating the Origin Domain Name field with the _**applicationLoadBalancerDns**_. Cloudfront requests and cache misses will be fulfilled from the **_edgeCacheSpotFleet_**. If **_edgeCacheSpotFleet_** also cache misses, requests will finally be fulfilled by the origin.
 
-<pre>$ ./jmeter -n -t ~/lab.jmx -l cdn.txt -e -o cdn/ -Jhost <b><i>originElasticIpAddress</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
+3\. Now you're ready to test. SSH into one of the transcoding nodes
+
+<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>transcodingInstance</b></i></pre>
+
+4\. When Jmeter is complete, you can access the results via a web browser
+
+<pre>http://<b><i>transcodingInstanceIp</b></i>/results/cdn/</pre>
+
+5\. Update the -Jhost flag to point to the Domain of the Cloudfront Distribution, found in the Cloudfront console.
+
+<pre>$ ./jmeter -n -t ~/lab.jmx -l cdn.txt -e -o cdn/ -Jhost <b><i>cloudfrontDistributionDns</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
+
+6\. Note the average latency, percentiles, etc. and compare against the cache/origin results. Adding the CDN improved latency by a HUGE amount. The viewers will definitely appreciate these performance enhancements and the processing costs to serve all of them have decreased significantly. Win, win!
+
+## Conclusion
+
+We hope you enjoyed the workshop and are inspired fold these learnings into your own projects. Please submit any questions or issues to the github repo and we'll do our best to answer. 
 
 ## Extra Credit
 
 * Use your own camera and RTMP capable encoder to contribute a source to the origin (beware bandwidth requirements)
-* Decrease overall live latency by tuning the segment sizes
+* Setup a SNS email notification to notify you when VOD has completed processing
+* Decrease overall live latency by tuning the HLS segment sizes
 * Implement cubemap filter in VOD processing fleet to compare against live spherical projection
-* Use spot fleet for VOD processing fleet
-* Implement OAI so that only cloudfront can access the origin/cache fleet
-* SNS notification on VOD processing complete egress bucket
+* Implement OAI so that only Cloudfront can access the origin/cache fleet
 
 
 ## Appendix
@@ -295,5 +333,11 @@ http://web.cecs.pdx.edu/~fliu/project/vremiere/
 
 https://github.com/facebook/transform360 – ffmpeg cubemap
 https://github.com/arut/nginx-rtmp-module – nginx rtmp
+
+### TODO
+
+- add webserver to transcoder for jmeter results
+- move jmeter config to /home/ec2-user from /root/repo
+
 
 
