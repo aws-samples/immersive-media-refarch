@@ -1,0 +1,296 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: 360-Degree Live streaming Workshop - Load Testing
+Mappings:
+  CidrMappings:
+    public-subnet-1:
+      CIDR: 10.0.1.0/24
+    public-subnet-2:
+      CIDR: 10.0.2.0/24
+    vpc:
+      CIDR: 10.0.0.0/16
+  amazonLinuxAmi:
+    ap-northeast-1:
+      AMI: ami-dac312b4
+    ap-southeast-1:
+      AMI: ami-dc9339bf
+    ap-southeast-2:
+      AMI: ami-1c47407f
+    ca-central-1:
+      AMI: ami-ebed508f
+    eu-central-1:
+      AMI: ami-af0fc0c0
+    eu-west-1:
+      AMI: ami-70edb016
+    eu-west-2:
+      AMI: ami-f1949e95
+    us-east-1:
+      AMI: ami-0b33d91d
+    us-east-2:
+      AMI: ami-c55673a0
+    us-west-1:
+      AMI: ami-165a0876
+    us-west-2:
+      AMI: ami-f173cc91
+Metadata:
+  Authors:
+    Description: Konstantin Wilms <konwilms@amazon.com>, Shawn Przybilla <przybill@amazon.com>,
+      Chad Schmutzer <schmutze@amazon.com>
+  License:
+    Description: 'Copyright 2017 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+
+      Licensed under the Amazon Software License (the "License"). You may not use this file
+      except in compliance with the License. A copy of the License is located at
+
+      http://aws.amazon.com/asl/
+
+      or in the "license" file accompanying this file. This file is distributed on an "AS IS"
+      BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+      License for the specific language governing permissions and limitations under the License.'
+Outputs:
+  loadSpotFleetId:
+    Description: The load Spot fleet request ID
+    Value:
+      Ref: loadSpotFleet
+Parameters:
+  keyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the EC2 Instances
+    Type: AWS::EC2::KeyPair::KeyName
+  sourceCidr:
+    Default: 0.0.0.0/0
+    Description: Optional - CIDR/IP range for instance ssh access - defaults
+      to 0.0.0.0/0
+    Type: String
+  spotInstancePrice:
+    Default: 0.159
+    Description: Maximum Spot Instance price per hour per instance
+    Type: Number
+Resources:
+  attachGateway:
+    DependsOn:
+    - vpc
+    - internetGateway
+    Properties:
+      InternetGatewayId:
+        Ref: internetGateway
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::VPCGatewayAttachment
+  icmpSecurityGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      GroupDescription: Security group to allow ICMP
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: -1
+        IpProtocol: icmp
+        ToPort: -1
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::SecurityGroup
+  internetGateway:
+    DependsOn:
+    - vpc
+    Type: AWS::EC2::InternetGateway
+  publicSubnet1:
+    DependsOn: attachGateway
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock:
+        Fn::FindInMap:
+        - CidrMappings
+        - public-subnet-1
+        - CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: Public Subnet 1
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::Subnet
+  publicSubnet1RouteTableAssociation:
+    DependsOn:
+    - publicRouteTable
+    - publicSubnet1
+    - attachGateway
+    Properties:
+      RouteTableId:
+        Ref: publicRouteTable
+      SubnetId:
+        Ref: publicSubnet1
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  spotFleetAutoscaleRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - application-autoscaling.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetAutoscaleRole
+      Path: /
+    Type: AWS::IAM::Role
+  publicRoute:
+    DependsOn:
+    - publicRouteTable
+    - internetGateway
+    - attachGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: internetGateway
+      RouteTableId:
+        Ref: publicRouteTable
+    Type: AWS::EC2::Route
+  publicRouteTable:
+    DependsOn:
+    - vpc
+    - attachGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: Public Route Table
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::RouteTable
+  spotFleetRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - spotfleet.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+      Path: /
+    Type: AWS::IAM::Role
+  loadSecurityGroup:
+    DependsOn:
+    - vpc
+    Properties:
+      GroupDescription: load Spot fleet instance security group
+      SecurityGroupIngress:
+      - CidrIp:
+          Ref: sourceCidr
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+      - CidrIp:
+          Ref: sourceCidr
+        FromPort: 80
+        IpProtocol: tcp
+        ToPort: 80
+      VpcId:
+        Ref: vpc
+    Type: AWS::EC2::SecurityGroup
+  loadSpotFleet:
+    DependsOn:
+    - spotFleetRole
+    - loadSecurityGroup
+    - icmpSecurityGroup
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: diversified
+        IamFleetRole:
+          Fn::GetAtt:
+          - spotFleetRole
+          - Arn
+        LaunchSpecifications:
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: c4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: loadSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+              Ref: publicSubnet1
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                yum -y install git
+
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
+
+                REGION=${AWS::Region} WAITCONDITIONHANDLE="${loadSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/load/user-data-load.sh
+                '
+          ImageId:
+            Fn::FindInMap:
+            - amazonLinuxAmi
+            - Ref: AWS::Region
+            - AMI
+          InstanceType: m4.large
+          KeyName:
+            Ref: keyName
+          Monitoring:
+            Enabled: true
+          SecurityGroups:
+          - GroupId:
+              Ref: loadSecurityGroup
+          - GroupId:
+              Ref: icmpSecurityGroup
+          SubnetId:
+              Ref: publicSubnet1
+          UserData:
+            Fn::Base64:
+              Fn::Sub: '#!/bin/bash -xe
+
+                yum -y install git
+
+                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
+
+                REGION=${AWS::Region} WAITCONDITIONHANDLE="${loadSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/load/user-data-load.sh
+
+                '
+        ReplaceUnhealthyInstances: true
+        SpotPrice:
+          Ref: spotInstancePrice
+        TargetCapacity: 1
+        TerminateInstancesWithExpiration: true
+    Type: AWS::EC2::SpotFleet
+  loadSpotFleetWaitCondition:
+    DependsOn: loadSpotFleetWaitConditionHandle
+    Properties:
+      Count: 1
+      Handle:
+        Ref: loadSpotFleetWaitConditionHandle
+      Timeout: 900
+    Type: AWS::CloudFormation::WaitCondition
+  loadSpotFleetWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  vpc:
+    Properties:
+      CidrBlock:
+        Fn::FindInMap:
+        - CidrMappings
+        - vpc
+        - CIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+      - Key: Name
+        Value: VPC for Running a Highly Scalable Immersive Media Solution on EC2 Spot Instances
+    Type: AWS::EC2::VPC
+...

@@ -33,6 +33,7 @@ groupadd www
 usermod -a -G www ec2-user
 chown -R root:www /var/www
 chmod 2775 /var/www
+mkdir -p /var/www/html/results/
 find /var/www -type d -exec chmod 2775 {} +
 find /var/www -type f -exec chmod 0664 {} +
 
