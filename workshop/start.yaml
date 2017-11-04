@@ -914,7 +914,6 @@ Resources:
     - spotFleetInstanceProfile
     - transcodingSecurityGroup
     - icmpSecurityGroup
-    - originSecurityGroup
     Properties:
       SpotFleetRequestConfigData:
         AllocationStrategy: diversified
@@ -943,8 +942,6 @@ Resources:
               Ref: transcodingSecurityGroup
           - GroupId:
               Ref: icmpSecurityGroup
-          - GroupId:
-              Ref: originSecurityGroup
           SubnetId:
             Fn::Join:
             - ','
@@ -983,8 +980,6 @@ Resources:
               Ref: transcodingSecurityGroup
           - GroupId:
               Ref: icmpSecurityGroup
-          - GroupId:
-              Ref: originSecurityGroup
           SubnetId:
             Fn::Join:
             - ','

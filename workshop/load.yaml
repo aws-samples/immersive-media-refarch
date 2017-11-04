@@ -209,7 +209,7 @@ Resources:
           - spotFleetRole
           - Arn
         LaunchSpecifications:
-          ImageId:
+        - ImageId:
             Fn::FindInMap:
             - amazonLinuxAmi
             - Ref: AWS::Region
@@ -235,8 +235,9 @@ Resources:
                 cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
 
                 REGION=${AWS::Region} WAITCONDITIONHANDLE="${loadSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/load/user-data-load.sh
+
                 '
-          ImageId:
+        - ImageId:
             Fn::FindInMap:
             - amazonLinuxAmi
             - Ref: AWS::Region

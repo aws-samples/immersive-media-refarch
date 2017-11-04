@@ -9,36 +9,6 @@ yum -y update aws-cli
 yum -y install \
   awslogs jq
 
-# for workshop only, update java and install jmeter, setup basic webserver for results
-yum -y install \
-  java-1.8.0
-
-yum -y remove \
-  java-1.7.0-openjdk
-
-cd /tmp && \
-  curl -O http://apache.mirrors.lucidnetworks.net//jmeter/binaries/apache-jmeter-3.3.tgz && \
-  tar xzf apache-jmeter-3.3.tgz && \
-  cp -r apache-jmeter-3.3/ /usr/local/bin/ && \
-  echo PATH=$PATH:/usr/local/bin/apache-jmeter-3.3/bin/ >> /home/ec2-user/.bashrc
-
-yum install -y \
-  httpd24
-
-chkconfig httpd on && service httpd restart
-
-cp /root/immersive-media-refarch/workshop/lab.jmx /home/ec2-user/
-
-groupadd www
-usermod -a -G www ec2-user
-chown -R root:www /var/www
-chmod 2775 /var/www
-mkdir -p /var/www/html/results/
-find /var/www -type d -exec chmod 2775 {} +
-find /var/www -type f -exec chmod 0664 {} +
-
-# end workshop
-
 aws configure set default.region $REGION
 
 cd /tmp && \
