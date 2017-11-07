@@ -13,11 +13,11 @@ yum -y remove \
   java-1.7.0-openjdk
 
 cd /tmp && \
-  curl -O http://apache.mirrors.lucidnetworks.net//jmeter/binaries/apache-jmeter-3.3.tgz && \
+  curl -O http://www.gtlib.gatech.edu/pub/apache//jmeter/binaries/apache-jmeter-3.3.tgz && \
   tar xzf apache-jmeter-3.3.tgz && \
   cp -r apache-jmeter-3.3/ /usr/local/bin/ && \
   echo PATH=$PATH:/usr/local/bin/apache-jmeter-3.3/bin/ >> /home/ec2-user/.bashrc && \
-  echo JVM_ARGS="-Xms3072m -Xmx3072m" >> /home/ec2-user/.bashrc
+  echo JVM_ARGS="-Xms3072m -Xmx3072m" >> /etc/environment
 
 yum install -y \
   httpd24
