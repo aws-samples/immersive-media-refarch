@@ -1,27 +1,31 @@
-# W.I.P 360-degree live streaming on AWS
+# Immersive Live Streaming on AWS
 
 ## Overview
 
-360-degree video allows content creators to capture and deliver unique experiences. Social Media sites have implemented 360-degree video into their platforms, making it simple to access, but what of those who attempt to build our own unique experiences, where do we begin? Additionally, live streaming, a commodotized consumer product spanning far outside the realm of Social Media, still poses unique implementation challenges.
+Immersive video, often referred to as VR or 360-video, allows content creators to capture and deliver unique experiences. Social Media sites have implemented immersive video into their platforms, making it widely accessible to consumers, but what of builders who seek to design our own unique experiences, where do we begin? 
 
-In this workshop, you'll is to combine these technologies. Demystifying live streaming, while brrining the unique experience of immersive video.
+Additionally, live streaming, a commodotized consumer product spanning far outside the realm of Social Media, still poses unique implementation challenges. One mistake can cost rightsholders revenue and, arguably worse, customer loyalty.
+
+In this workshop, we bring these two technologies together. Demystifying live streaming, while examining the unique experience of immersive video.
 
 ### Requirements
 
-* AWS account - if you don't have one, it's easy and free to create one
-* AWS IAM account with elevated privileges allowing you to interact with CloudFormation, IAM, EC2, ECS, S3, Cloudwatch, and Cloudfront
-* A workstation or laptop with an ssh client installed, such as putty on Windows or terminal on Mac
-* Familiarity with Command Line (Bash), web servers, and video processing is a plus, but not absolutely required
+* AWS account - if you don't have one, it's easy and free to create one.
+* AWS IAM account with elevated privileges allowing you to interact with CloudFormation, IAM, EC2, ECS, S3, Cloudwatch, and Cloudfront.
+* A workstation or laptop with an SSH client installed, such as putty on Windows or Terminal on MacOS.
+* Familiarity with bash, web servers, video processing, and streaming media is strongly encouraged, but not absolutely required.
 
 ### Labs
 
-The labs in this directory are designed to be completed in sequential order. If you're attending an AWS event, your host will give you an overview of the technology and expectations for each lab. If you're following along at home, we've provided the presentation materials as a pdf. Feel free to open issue tickets on the repo if you have questions or issues. Please use a modern verion of the Google Chrome browser as this is what we've used to design the workshop.
+The labs in this directory are designed to be completed in sequential order. If you're attending an AWS event, your host will give you an overview of the technology and expectations for each lab. If you're following along at home, we've provided the presentation materials as a pdf. Feel free to open issue tickets on the repo if you have questions or issues. 
 
-**Lab 1:** Simple Live Streaming Service
+Please use a modern verion of the Google Chrome browser as this is what we've used to design the workshop. We also recommend having a scratch pad or somewhere to note important information throughout the lab.
+
+**Lab 1:** Live Streaming Service
 
 **Lab 2:** Video-on-Demand Recording
 
-**Lab 3:** Caching and Content Delivery
+**Lab 3:** Reliability
 
 ### Conventions
 
@@ -31,23 +35,27 @@ Throughout this README, we provide commands for you to run in the terminal.  The
 $ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginIP</i></b>
 </pre>
 
-The command starts after $.  Words that are ***UPPER_ITALIC_BOLD*** indicate a value that is unique to your environment.  For example, the ***PRIVATE\_KEY.PEM*** refers to the private key of an SSH key pair that you've created, and the camelCase ***primaryOriginIP*** is a value provided found in the console.
+The command starts after $.  Words that are ***UPPER_ITALIC_BOLD*** indicate a value that is unique to your environment.  For example, the ***PRIVATE\_KEY.PEM*** refers to the private key of an SSH key pair that you've created, and the camelCase ***primaryOriginIP*** is a value provided found in the console, either as a Cloudformation Output or as indicated.
 
 
 ### Cleanup and Disclaimer
 
-TODO
+This section will appear again below as a reminder because you will be deploying infrastructure on AWS which will have an associated cost. Fortunately, this workshop should take no more than 2.5 hours to complete, and uses primarily EC2 Spot instances, so costs will be minimal. See the appendix for an estimate of what this workshop should cost to run. When you're done with the workshop, follow these steps to make sure everything is cleaned up.
+
+* Delete any manually created resources throughout the labs.
+* Delete any files stored on S3.
+* Delete both CloudFormation stacks launched throughout the workshop.
 
 
 ## Challenge
 
-Imagine that you're part of the Re:Invent `17 team. There's limited session availablity and not everyone can attend in person - what could you do? As the organizer, you could stream the sessions in regular old fixed/flat view with a narrow field-of-vision **_or_** you could "raise the bar" on conference streaming vy delivering an immersive experience. Your challenge, should you choose to accept it, is to build this immersive live streaming system by following this workshop.
+Imagine that you're part of the re:Invent 2017 team. There's limited session availablity and not everyone can attend in person - what can you do? As the organizer, you could stream the sessions in regular old fixed/flat view with a narrow field-of-vision **_or_** you could raise the bar for conference streaming everywhere with a truly immersive experience. Your challenge, should you choose to accept it, is to build this system by following the labs in this workshop.
 
-{marketechture}
+{insert marketecture}
 
 ## Lab 0 - Setup
 
-1\. First, you'll need to select a [region](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html). For this lab, you need to choose either **Ohio** or **Oregon**. At the top right hand corner of the AWS Console, you'll see a **Support** dropdown. To the left of that is the region selection dropdown.
+1\. First, you'll need to select a [region](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html). For this lab, you need to choose **Ireland**. At the top right hand corner of the AWS Console, you'll see a **Support** dropdown. To the left of that is the region selection dropdown.
 
 2\. Next, you need to create an SSH key pair which is used to login to the instances once provisioned.  Go to the EC2 Dashboard and click on **Key Pairs** in the left menu under Network & Security.  Click **Create Key Pair**, provide a name (can be anything, make it something memorable) when prompted, and click **Create**.  Once created, the private key in the form of .pem file will be automatically downloaded.  
 
@@ -57,26 +65,25 @@ If you're using linux or mac, change the permissions of the .pem file to be less
 
 If you're on windows you'll need to convert the .pem file to .ppk to work with putty.  Here is a link to instructions for the file conversion - [Connecting to Your Linux Instance from Windows Using PuTTY](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html)
 
-3\. We provide a CloudFormation template to help attendees get started. This template launches much of the infrastructure required, but leaves certain components for you, the participant, to build.
+3\. We provide a CloudFormation template to help attendees get started. This template launches much of the infrastructure required, but leaves certain components for you, the participant, to implement.
 
 {architecture diagram}
 
-*Prior to launching a stack, be aware that a few of the resources launched need to be manually deleted when the workshop is over. When finished working, please review the "Workshop Cleanup" section to learn what manual teardown is required by you.*
+_Prior to launching a stack, be aware that a few of the resources launched need to be manually deleted when the workshop is over. When finished working, please review the "Workshop Cleanup" section to learn what manual teardown is required by you._
 
-Click on one of these CloudFormation templates that matches the region you created your keypair in to launch your stack:  
+Click on the Deploy to AWS button below to launch the required infrastructure in the Ireland (eu-west-1) region.
 
-Region | Launch Template
------------- | -------------  
-**Ohio** (us-east-2) | [![Launch ECS Deep Learning Stack into Ohio with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=ecs-deep-learning-stack&templateURL=https://s3.amazonaws.com/ecs-dl-workshop-us-east-2/ecs-deep-learning-workshop.yaml)  
-**Oregon** (us-west-2) | [![Launch ECS Deep Learning Stack into Oregon with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ecs-deep-learning-stack&templateURL=https://s3.amazonaws.com/ecs-dl-workshop-us-west-2/ecs-deep-learning-workshop.yaml)  
+ [![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ecs-deep-learning-stack&templateURL=https://s3.amazonaws.com/ecs-dl-workshop-us-west-2/ecs-deep-learning-workshop.yaml)  
 
 The template will automatically bring you to the CloudFormation Dashboard and start the stack creation process in the specified region. Click "Next" on the page it brings you to. Do not change anything on the first screen.
+
 ![CloudFormation PARAMETERS](/images/cf-initial.png)
 
-The template sets up a VPC, IAM roles, S3 bucket, SQS, and EC2 Instances running various components of the solution - origin, cache, and transcode.  The idea is to provide a contained environment, so as not to interfere with any other provisioned resources in your account.  In order to demonstrate cost optimization strategies, the EC2 Instances are [EC2 Spot Instances](https://aws.amazon.com/ec2/spot/) deployed by [Spot Fleet](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet.html).  If you are new to [CloudFormation](https://aws.amazon.com/cloudformation/), take the opportunity to review the [template](https://github.com/awslabs/immersive-media-refarch/blob/master/workshop/start.yaml) during stack creation.
+The template sets up a VPC, IAM roles, S3 bucket, SQS, ALB, and EC2 Instances running various components of the solution - origin, cache, and transcode.  The idea is to provide a contained environment, so as not to interfere with any other provisioned resources in your account.  In order to demonstrate cost optimization strategies, the EC2 Instances are [EC2 Spot Instances](https://aws.amazon.com/ec2/spot/) deployed by [Spot Fleet](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet.html).  If you are new to [CloudFormation](https://aws.amazon.com/cloudformation/), take the opportunity to review the [template](https://github.com/awslabs/immersive-media-refarch/blob/master/workshop/start.yaml) during stack creation.
 
 **IMPORTANT**  
 *On the parameter selection page of launching your CloudFormation stack, make sure to choose the key pair that you created in step 1. If you don't see a key pair to select, check your region and try again.*
+
 ![CloudFormation PARAMETERS](/images/cf-params.png)
 
 **Create the stack**  
@@ -87,23 +94,26 @@ Periodically check on the stack creation process in the CloudFormation Dashboard
 
 ![CloudFormation CREATION\_COMPLETE](/images/cf-complete.png)
 
-Note that when your stack moves to a **CREATE\_COMPLETE** status, you won't necessarily see EC2 instances yet. If you don't, go to the EC2 console and click on **Spot Requests**. There you will see the pending or fulfilled spot requests. Once they are fulfilled, you will see your EC2 instances within the EC2 console.
+When your stack moves to a **CREATE\_COMPLETE** status, you won't necessarily see EC2 instances yet. If you don't, go to the EC2 console and click on **Spot Requests**. There you will see the pending or fulfilled spot requests. Once they are fulfilled, you will see your EC2 instances within the EC2 console.
 
-If there was an error during the stack creation process, CloudFormation will rollback and terminate.  You can investigate and troubleshoot by looking in the Events tab.  Any errors encountered during stack creation will appear in the event log. 
+If there an error occurs during stack creation, CloudFormation will rollback and terminate.  You can investigate and troubleshoot by looking in the Events tab. Errors encountered during stack creation will appear in the event log. 
 
-## Lab 1 - Simple Streaming Service
+## Lab 1 - Live Streaming Service
 
 In this lab, you will live stream to the origin and confirm that it plays back with a test client. But, first, a word on transmitting live video...
 
-In the real-world, content is captured in real-time via a camera, compressed, and sent to a central location for further processing and distribution. Streaming from a remote production location to distribution infrastructure is called *Contribution* and it requires careful consideration of the network charactaristics between these two geographic points.
+In the real-world, content is captured in real-time via a camera, compressed, and sent to a central location for further processing and distribution. Broadcasting from a remote production location to distribution infrastructure is called *Contribution* and it requires careful consideration of the network charactaristics between these two geographic points.
 
-- Will the remote location have dedicated bandwidth or only public internet connectivity?
+- Does the remote location have dedicated bandwidth, public internet connectivity, cellular or nothing at all?
 - What data rate is required to create a quality end-user experience?
-- Redundant contribution streams over multiple network paths?
+- Do we need redundant contribution streams over multiple network paths?
 - Do users have latency expectations?
-- Which protocol is most appropriate? HLS/RTMP/RTP?
+- Which protocol(s) are supported by on-premise equipment and the origin?
 
-By using a test source to simulate a live stream, you can test the infrastructure local to the region in which it is deployed and avoid first-mile connectivity challenges. Use the test source for the labs, but don't forget to connect other devices if bandwidth is available. Proceed with caution on mobile phones though, they will not warn you when streaming over cellular networks and can quickly eat up capped data plans. AWS **_IS NOT_** liable for data charges incurred as a part of this workshop.
+In a development environment, you can avoid most of these questions by using a local test signal to simulate a live stream. FFmpeg has been built into the origin and you'll use it to generate the live signal. But, don't forget to connect other devices if bandwidth is available. 
+
+**IMPORTANT**
+_Mobile phones will not warn you when streaming over cellular networks and can quickly eat up capped data plans. AWS **_IS NOT_** liable for data charges incurred as a part of this workshop._
 
 From the Cloudformation console, select the stack you created, then Outputs. Find _**primaryOriginElasticIp**_ and note the value. This is the IP address of your media origin. 
 
@@ -113,9 +123,7 @@ SSH into the origin instance with the following command:
 
 <pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginElasticIp</b></i></pre>
 
-Next, start ffmpeg to simulate a real-time source. The following command uses lavfi/libavfilter with ffmpeg to generate a test pattern.
-
-{additional details on ffmpeg command when finished with rightsizing}
+Next, start ffmpeg to simulate a live signal. The following command uses lavfi/libavfilter with ffmpeg to generate a test pattern. A full description of each flag can be found in the appendix.
 
 _Use of a terminal multiplexer like screen or tmux is advised to open multiple shells over a single SSH session._
 
@@ -135,12 +143,12 @@ Now for the exciting part - _playing the live stream_. Within the CloudFormation
 
 You should now see spherical colorbars and hear a test tone from the system. Success!
 
-{picture of colorbars}
+{gif of colorbars and ticking}
 
 
 ## Lab 2 - Video on Demand
 
-What about participants who aren't able to attend during the scheduled session? We should provide them with Video-on-Demand recording to allow anyone to virtually attend when they chose. Thankfully, the nginx-rtmp record directive that works like a VCR. You'll use this to capture the live source and then transcode the recording with a fleet of EC2 instances. 
+What about participants who aren't able to attend during the scheduled session?You should create a Video-on-Demand recording that allows anyone to virtually attend when they chose. Thankfully, the nginx-rtmp record directive that works like a VCR. You'll use this to capture the live source and then transcode the recording with a fleet of EC2 instances. 
 
 {diagram}
 
@@ -150,7 +158,7 @@ With the VOD transcode fleet, jobs can run much slower than real-time, emphasizi
 ### Config Changes
 
 
-SSH into the Origin
+1\. SSH into the Origin
 
 <pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginElasticIp</b></i></pre>
 
@@ -168,13 +176,13 @@ Modify the nginx configuration to include the record directive. This records all
    ...
 ```
 
-Restart nginx for the changes to take effect.
+2\. Restart nginx for the changes to take effect.
 
 <pre>$ sudo service nginx restart</pre>
 
-### VOD Test
+### Testing Video-on-Demand
 
-Recording begins when a stream is published to the nginx application. Upon stream stop, nginx-rtmp finishes the recording and executes a script that uploads it to **_s3IngressBucket_**. New objects in this bucket generate an event, which is published to _**transcodingQueue**_. _**transcodingSpotFleet**_ periodically polls this queue and transcodes the recording. Resulting ABR outputs are uploaded into **_s3EgressBucket_**, the same bucket hosting our client page.
+Recording begins when a stream is published to the nginx application. Upon stream stop, nginx-rtmp finishes the recording and executes a script to upload into **_s3IngressBucket_**. New objects in this bucket generate an event, which is published to _**transcodingQueue**_. _**transcodingSpotFleet**_ periodically polls this queue and transcodes the recordings and resulting ABR outputs are uploaded into **_s3EgressBucket_**, the same bucket hosting our client page.
 
 With the configuration updates in place, you can now test the full system functionality. There's a few components to the VOD system, so you'll want to examine each one to validate proper execution. 
 
@@ -188,7 +196,7 @@ $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=s
 
 {image example}
 
-Simple Queue Service (SQS) decouples the transcode requests from the transcode fleet. It carries the S3 bucket event, generated when a new recording is put into **_s3IngressBucket_**, and serves as a job queue for the _**transcodingSpotFleet**_. In the event that an instance fails or is terminated by EC2 Spot, events will return to the queue and be processed by another node. This system also uses the queue depth to autoscale _**transcodingSpotFleet**_ based on number of recordings waiting to be processed.
+Simple Queue Service (SQS) decouples the transcode requests from the transcode fleet. It carries the S3 bucket event, generated when a new recording is put into **_s3IngressBucket_**, and serves as a job queue for the _**transcodingSpotFleet**_. In the event that an instance fails or is terminated by EC2 Spot, events will return to the queue and be processed by another node. This system also uses the queue depth to autoscale _**transcodingSpotFleet**_ based on number of recordings waiting to be processed, though it has been set to 1 to minimze workshop costs.
 
 3\. Back in the terminal window, stop the ffmpeg test source by pressting ctrl+c
 
@@ -204,30 +212,28 @@ The transcode worker is running a polling script every 5 seconds to pull down an
 
 6\. When the CPU metric goes down, our VOD transcode is complete. Navigate to the S3 console and search/select the bucket containing _**transcodingEgress**_. Here, you should see a key starting with test-_TIMESTAMP/_, this was the output directory of the transcode job and is now the object prefix within S3. Within, there should be many transport stream (.ts) and manifest (.m3u8) objects. Select the MANIFEST.m3u8 and note the link, this is our playback URL for the video-on-demand recording, now transcoded for adaptive bitrate delivery.
 
-To test playback, use the client from Lab 1. If you've closed the tab, the URL can be found by opening the Cloudformation console and selecting up the Cloudformation Output _**clientWebsiteUrl**_. Next, update the ?url= query parameter with the newly created m3u8 URL and confirm that the VOD asset plays for approximately the duration ffmpeg was streaming. 
+7\. To test playback, use the client from Lab 1. If you've closed the tab, the URL can be found by opening the Cloudformation console and selecting up the Cloudformation Output _**clientWebsiteUrl**_. Next, update the ?url= query parameter with the newly created m3u8 URL and confirm that the VOD asset plays for approximately the duration ffmpeg was streaming. 
 
 <pre>http://<b><i>clientWebsiteUrl</b></i>?url=https://s3-us-west-2.amazonaws.com/<b><i>transcodingEgressBucketId</b></i>/test-1508866984/MANIFEST.M3U8
 </pre>
 
-You've successfully modified the architecture to record a live stream, transcode it with EC2, and host it with an S3 bucket. Great work! With our live and VOD functional, let's turn to scaling and reliability.
+You've successfully modified the architecture to record a live stream, transcode it with EC2, and host it with an S3 bucket. Great work! With our live and VOD functional, let's make sure it stays operational during the event, no matter how many people tune in!
 
 
-## Lab 3 - CDN and Caching
+## Lab 3 - Reliability
 
-In the previous two labs, a web browser retrieved the stream. This worked well for playback testing, but now you need to simulate many simultanious client requests to ensure the system scales. [Apache Jmeter](https://jmeter.apache.org/) is a Java based test framework that simulates client load at scale. The Jmeter configuration is outside of the workshop scope, but we encourage you to browse the documentation and lab.jmx file to learn more.
+In the previous two labs, a web browser retrieved the stream. This worked well for functional play testing, but now you need to simulate many simultanious client requests and validate that the system functions for more than a few users. [Apache Jmeter](https://jmeter.apache.org/) is a Java based test framework that simulates client load at scale. The Jmeter configuration is outside of the workshop scope, but we encourage you to browse the documentation and lab.jmx file to learn more.
 
-In the real-world, load testing is typically part of a development/test pipeline, possibly even automated with services like Codepipeline and Codedeploy. For educational purposes, Jmeter will run on one of the _**transcodingSpotFleet**_ instances. Jmeter has already been installed and the required .jmx configuration is located in /home/ec2-user/.
-
-In addition to generating load, Jmeter can produce basic results visualization. This will prove useful to review the results of each test to see how caching can affect server response times and errors. More advanced metrics can be gathered by implementing additional player-side tooling. [Raising the Bar on Video Streaming Quality](https://www.youtube.com/watch?v=IGXrnQviFLc) is a great overview of how Amazon Video addresses quality of service challenges for their customers.
-
-Average Response Time
-P90
-Frustration metric
+In addition to generating load, Jmeter can produce basic results visualization in a webpage. This will prove useful to see how caching affects server response time. This lab will focus only on response time, however, additional metrics can be gathered by implementing Real User Metrics in the player or implementing custom CloudWatch metrics for the service. Check out [Raising the Bar on Video Streaming Quality](https://www.youtube.com/watch?v=IGXrnQviFLc) for a fantasitc overview of how Amazon Video addresses this common challenge.
 
 {architecture diagram}
 
+1\. To begin, deploy the following Cloudformation template in any region that *is not* Ireland. The goal is to simulate load coming from real users, so use a different region. If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0.
 
-SSH into the origin and start the ffmpeg test stream
+[![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ecs-deep-learning-stack&templateURL=https://s3.amazonaws.com/ecs-dl-workshop-us-west-2/ecs-deep-learning-workshop.yaml)  
+
+
+2\. If necessary, start the test stream on the origin. You may have to SSH back into the instance or switch back to the Ireland region to retrieve the IP address.
 
 <pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginElasticIp</b></i></pre>
 
@@ -235,109 +241,139 @@ SSH into the origin and start the ffmpeg test stream
 $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 160k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
 </pre>
 
-SSH into one of the transcoding EC2 instances. You can find this by searching 'transcoding' in the EC2 console.
 
-<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>transcodingInstance</b></i></pre>
+3\. From the EC2 Console in the new region, determine the IP address of the instance deployed by the recent template, then SSH into it.
 
-Stop transcode watcher and any running VOD transcodes
+<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
 
-<pre>$ stop transcode-workder</pre>
-<pre>$ pkill ffmpeg</pre>
-
-Run jmeter replacing the -Jhost flag with the **_originElasticIpAddress_**. This test will run for 3 minutes, simulating 50 clients, ramping up over a period of 15 seconds. A log of the test and an HTML webpage will be generated in the required web-hosted directory.
+4\. Run jmeter replacing the _-Jhost_ flag with the **_originElasticIpAddress_**. Once executed, the test will run for 3 minutes, simulating 150 clients, ramping up over a period of 15 seconds. A log of the test and an HTML webpage will be generated in the required web-hosted directory.
 
 _Note that the HLS path /hls/test.m3u8 is hardcoded into the jmx file. If you're using a different streamname than test, you must modify this to continue._
 
-<pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=50 -Jrampup=15 -Jhost <b><i>originElasticIpAddress</b></i></pre>
+<pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=150 -Jrampup=15 -Jhost <b><i>originElasticIpAddress</b></i></pre>
 
-In the EC2 console, you can watch the load test impact CPU in near real-time by selecting the instance, then the _Monitoring_ tab.
+5\. In the EC2 console, watch the test impact CPU in near real-time by selecting the instance, then the _Monitoring_ tab.
 
-When Jmeter is complete, you can access the results via a web browser
+{screenshot of uptick in cpu}
 
-<pre>http://<b><i>transcodingInstanceIp</b></i>/results/origin/</pre> 
+The load on the origin, omitting long-running processes and ffmpeg, is ~2%. This isn't much, but remember, you only simulated 150 clients. What if you were expecting 150,000 concurrent viewers? (Hey, who knows, maybe it's a really popular workshop!). It would be difficult to find an instance with 2000% more CPU power and costly to send the _contribution_ feed to multiple origins. Recall that this was one of the early considerations and the reason you're using a test source on the origin itself. Bandwidth can be expensive, especially from events in Las Vegas!
 
-Note the average latency, percentiles, etc. Not bad for a single instance! Keep this tab open and compare the origin performance, with that of the cache and CDN to discover the value of those additional tiers. 
+So, what to do? You reduce load on the origin by introducing caches.
+
+### Edge Cache _a.k.a._ Origin Protection Cache _a.k.a_ Proxy Cache
+
+For the purposes of live streaming a [proxy cache](https://www.wikiwand.com/en/Web_cache), when properly configured, can:
+
+* Reduce load on the origin by orders of magnitude with caching and request coalescing
+* Protect the origin(s) from unforseen CDN issues, like the [thundering herd problem](https://www.wikiwand.com/en/Thundering_herd_problem), during a largescale live event
+* Scale horizontally and, with a diversified EC2 Spot Fleet request, cheaply
+* Use multiple upstream origins for 1+1 redundancy
+* Terminate SSL connections
+
+Just like dividing responsibility between cooks (origin) and the wait staff (caches) at your favorite resturant, you can use this pattern to improve reliability. With deterministic load on the origin, you don't have to worry about it being crushed by unforseen load, rendering the service unavailable. Afterall, cooks should be making declicious food, not taking orders and serving it. (I'm getting hungry... but back to the video!)
+
+The origin converts the contribution stream into adaptive bitrate, while the cache tier serves and caches the response data for a period of time or the _Time-To-Live_ value (TTL). The TTL is set by the origin and controls downstream cache behavior. For Apple HLS, especially live, it's important to control the segment manifest TTL seperately from the media segments. The segment manifest updates with every new segment made available by the origin and, if it's cached too long, could cause client issues.
+
+{diagram of caching in action}
+
+**_edgeCacheSpotFleet_**, managed by an EC2 Spot Fleet, uses Application Load Balancer and an Autoscaling Group to dynamically scale based on load. To keep costs at a minimum, this workshop defaults to a single instance, but you can override this in the future by changing the _**edgeCacheSpotFleetMaximumCapacity**_ parameter while launching the stack in Cloudformation.
+
+Let's test this tier to see how it changes the performance charataristics of the system.
 
 
-### Cache
+1\. SSH into the load testing instance if you haven't already done so.
 
-The [proxy cache](https://www.wikiwand.com/en/Web_cache) will help reduce origin load, while protecting the all-important origin from unforseen CDN issues or the [thundering herd problem](https://www.wikiwand.com/en/Thundering_herd_problem) during a large scale live event. 
+<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
 
-**_edgeCacheSpotFleet_** has been built using an Application Load Balancer in conjuntion with a fleet of EC2 instances from and EC2 Spot Fleet request. Let's test this tier to see how it benefits the overall performance of the system.
+2\. Run the same Jmeter load test, this time updating the -Jhost flag to point to the DNS of the Application Load Balancer that's handling requests for the cache fleet, called _**applicationLoadBalancerDns**_ in the Ireland Cloudformation Outputs.
 
-UPDATE With HLS, child manifests will be updating frequently. To prevent caching a manifest for too long and, thus, serving a _stale_ manifest, you can use Cach Behaviors to control the cache. By default Cloudformation will respect the Cache-Control headers provided by the upstream servers.
+<pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=150 -Jrampup=15 -Jhost <b><i>applicationLoadBalancerDns</b></i></pre>
 
-UPDATE something about cache nodes not storing state, being ephemeral and protection
+3\. In the EC2 console, watch the load test impact origin CPU in near real-time by selecting the instance, then the _Monitoring_ tab. The origin load is almost invisible compared to the 2% from the previous test, success!
 
+4\. When Jmeter is complete, access the results via a web browser and explore the response time metric.
 
-### Upstream 
+<pre>http://<b><i>loadTestingEC2Instance</b></i>/results/<b><i>HHMMSS</b></i>/</pre>
 
-1\. SSH into one of the transcoding instances if you haven't already done so.
-
-<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>transcodingInstance</b></i></pre>
-
-2\. Run the same Jmeter load test, this time updating the -Jhost flag to point to the DNS of ALB
-<pre>$ jmeter -n -t ~/lab.jmx -l cache.txt -e -o cache/ -Jhost <b><i>applicationLoadBalancerDns</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
-
-3\. In the EC2 console, watch the load test impact origin CPU in near real-time by selecting the instance, then the _Monitoring_ tab. Can you see how the origin suffers much less when a cache is in place?
-
-4\. When Jmeter is complete, you can access the results via a web browser
-
-<pre>http://<b><i>transcodingInstanceIp</b></i>/results/cache/</pre>
-
-5\. Note the average latency, percentiles, etc. for the cache and compare against just using the origin. Faster response times and less origin load, nice!
+The response time metric will vary depending on client location and internet connectivity. re:Invent is a global conference for attendees all over the world, how can you improve service response time performance for any viewer, no matter the location?
 
 
 ### Content Delivery Network
 
-Introducing a Content Delivery Network (CDN) is another common strategy to improve client performance while decreasing load on the backend. We have not configured the CDN as part of this lab, so you need to configure Cloudfront before testing.
+Introducing a [Content Delivery Network](https://www.wikiwand.com/en/Content_delivery_network) (CDN) is another common strategy to improve client performance while further decreasing load on the service components (origin, cache). We have not configured the CDN as part of this lab, so you need to configure Cloudfront before testing.
 
 1\. Open the Cloudfront console, click Create Distribution, then Get Started under the Web heading
 
-2\. Configure the Distribution by populating the Origin Domain Name field with the _**applicationLoadBalancerDns**_. The default configuration is suffecient for this workshop, scroll to the bottom of the page and click Create Distribuion. 
+2\. Configure the Distribution by populating the Origin Domain Name field with the _**applicationLoadBalancerDns**_. The default configuration is suffecient for this workshop, scroll to the bottom of the page and click _Create Distribuion_. 
 
 With this configuration, initial client requests to Cloudfront and cache misses will be fulfilled from the **_edgeCacheSpotFleet_**. If **_edgeCacheSpotFleet_** also cache misses, requests will finally be fulfilled by the origin.
 
-3\. Now you're ready to test. SSH into one of the transcoding nodes
+{visual representation of caching}
 
-<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>transcodingInstance</b></i></pre>
+3\. Now you're ready to test. SSH into one the load testing instance
 
-4\. When Jmeter is complete, you can access the results via a web browser
+<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
 
-<pre>http://<b><i>transcodingInstanceIp</b></i>/results/cdn/</pre>
-
-5\. Update the -Jhost flag to point to the Domain of the Cloudfront Distribution, found in the Cloudfront console under Domain Name.
+4\. Update the _-Jhost_ flag to point to the Domain of the Cloudfront Distribution, found in the Cloudfront console under Domain Name.
 
 {SCREENSHOT}
 
-<pre>$ jmeter -n -t ~/lab.jmx -l cdn.txt -e -o cdn/ -Jhost <b><i>cloudfrontDistributionDns</b></i> -Jthreads=50 -Jrampup=15 -Jduration</pre>
+<pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=150 -Jrampup=15 -Jhost <b><i>cloudfrontDistributionDns</b></i></pre>
 
-6\. Note the average latency, percentiles, etc. and compare against the cache/origin results. Adding the CDN improved latency by a HUGE amount. The viewers will definitely appreciate these performance enhancements and the processing costs to serve all of them have decreased significantly. Win, win!
+5\. When Jmeter is complete, access the results via a web browser. Compare the response time metrics against the previous test.
+
+<pre>http://<b><i>loadTestingEC2Instance</b></i>/results/<b><i>HHMMSS</b></i>/</pre>
+
+Adding a CDN improved client response time by a HUGE amount! The viewers will definitely appreciate the performance enhancements and the processing costs to serve all of them have decreased significantly. Win, win!
 
 ## Conclusion
 
-We hope you enjoyed the workshop and are inspired fold these learnings into your own projects. Please submit any questions or issues to the github repo and we'll do our best to answer. 
+We hope you enjoyed the workshop and are inspired to incorporate these learnings into your own video streaming projects. Please submit any questions or issues to the github repo and we'll do our best to answer. 
 
-## Extra Credit
+## To Try or Build
 
-* Use your own camera and RTMP capable encoder to contribute a source to the origin (beware bandwidth requirements)
-* Setup a SNS email notification to notify you when VOD has completed processing
+Here's a few extra things to try if you still have time left over during the workshop:
+
+* Try using your own camera and RTMP capable encoder to contribute a source to the origin (beware bandwidth requirements)
+* Try adjusting the fleet target size, creating a few VOD recordings, and watching the _**transcodingSpotFleet**_ scale up
+
+Please submit pull requests to this workshop or associated parent reference architecture. We're happy to help you get started with any of these items:
+
+* Implement a SNS email notification to notify an administrator when a recording has completed processing
 * Decrease overall live latency by tuning the HLS segment sizes
 * Implement cubemap filter in VOD processing fleet to compare against live spherical projection
 * Implement OAI so that only Cloudfront can access the origin/cache fleet
+* Implement a CI/CD testing for the Codepipeline
 
+
+### Cleanup and Disclaimer
+
+This section will appear again below as a reminder because you will be deploying infrastructure on AWS which will have an associated cost. Fortunately, this workshop should take no more than 2 hours to complete, so costs will be minimal. See the appendix for an estimate of what this workshop should cost to run. When you're done with the workshop, follow these steps to make sure everything is cleaned up.
+
+* Delete any manually created resources throughout the labs.
+* Delete any files stored on S3.
+* Delete both CloudFormation stacks launched throughout the workshop.
 
 ## Appendix
-## Additional Resources and References
-### Live Streaming Basics
 
-### 360 Video Basics
+### Cost Breakdown
 
-### 360 Cameras
+### FFmpeg Command Reference
+
+<pre>
+$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 160k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
+</pre>
+
+### 360 Cameras We've Tested
 
 Ricoh Theta
 insta360 one
 insta360 ?
+
+## Additional Resources and References
+## Live Streaming Basics
+
+
 
 Bandwidth optimization and Quality
 Adaptive Focus
@@ -349,10 +385,17 @@ http://web.cecs.pdx.edu/~fliu/project/vremiere/
 https://github.com/facebook/transform360 – ffmpeg cubemap
 https://github.com/arut/nginx-rtmp-module – nginx rtmp
 
-### TODO
 
-- add webserver to transcoder for jmeter results
-- move jmeter config to /home/ec2-user from /root/repo
 
+
+When Jmeter is complete, you can access the results via a web browser.
+
+<pre>http://<b><i>loadTestingEc2Instance</b></i>/results/</pre> 
+
+ Click on the directory named _HHMMSS_ timestamp associated with the jmeter test and review the results.
+
+ {image of origin results, don't confuse with ffmpeg}
+
+Note the average latency, percentiles, etc. Not bad for a single instance! Keep this tab open and compare the origin performance, with that of the cache and CDN to discover the value of those additional tiers.
 
 
