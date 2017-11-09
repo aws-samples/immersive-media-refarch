@@ -367,8 +367,6 @@ insta360 ?
 ## Additional Resources and References
 ## Live Streaming Basics
 
-
-
 Bandwidth optimization and Quality
 Adaptive Focus
 HEVClive production, multi-camera, switching/editing (vremiere
@@ -378,17 +376,3 @@ http://web.cecs.pdx.edu/~fliu/project/vremiere/
 
 https://github.com/facebook/transform360 – ffmpeg cubemap
 https://github.com/arut/nginx-rtmp-module – nginx rtmp
-
-
-
-
-When Jmeter is complete, you can access the results via a web browser.
-
-<pre>http://<b><i>loadTestingEc2Instance</b></i>/results/</pre> 
-
-
- {image of origin results, don't confuse with ffmpeg}
-
-Note the average latency, percentiles, etc. Not bad for a single instance! Keep this tab open and compare the origin performance, with that of the cache and CDN to discover the value of those additional tiers.
-
-
