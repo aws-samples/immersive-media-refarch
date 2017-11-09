@@ -334,6 +334,7 @@ We hope you enjoyed the workshop and are inspired to incorporate these learnings
 Here's a few extra things to try if you still have time left over during the workshop:
 
 * Try using your own camera and RTMP capable encoder to contribute a source to the origin (beware bandwidth requirements)
+* Try deploying the reference architecture in the parent directory of this README. This uses two origin systems and can support 1+1 failover should problem occur over a network path or origin instance
 * Try adjusting the fleet target size, creating a few VOD recordings, and watching the _**transcodingSpotFleet**_ scale up
 * Try creating a Cloudfront Distribution for the VOD bucket and web client
 
