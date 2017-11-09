@@ -115,7 +115,7 @@ _Mobile phones will not warn you when streaming over cellular networks and can q
 
 From the Cloudformation console, select the stack you created, then Outputs. Find _**primaryOriginElasticIp**_ and note the value. This is the IP address of your media origin. 
 
-![CloudFormation primaryOriginElasticIp](images/01.png)
+![CloudFormation primaryOriginElasticIp](images/10.png)
 
 SSH into the origin instance with the following command:
 
