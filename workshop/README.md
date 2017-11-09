@@ -51,7 +51,7 @@ This section will appear again below as a reminder because you will be deploying
 
 Imagine that you're part of the re:Invent 2017 team. There's limited session availablity and not everyone can attend in person - what can you do? As the organizer, you could stream the sessions with regular old video with a fixed field-of-vision **_or_** you could raise the bar for conference streaming everywhere by streaming a truly immersive experience. Your challenge, should you choose to accept it, is to build this system by following the labs in this workshop.
 
- ![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/arch.png)
+ ![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/arch0.png)
 
 ## Lab 0 - Setup
 
@@ -110,6 +110,8 @@ In the real-world, content is captured in real-time via a camera, compressed, an
 
 In a development environment, you can avoid most of these questions by using a local test signal to simulate a live stream. FFmpeg has been built into the origin and you'll use it to generate the live signal. But, don't forget to connect other devices if bandwidth is available. 
 
+![Lab 1](images/arch1.png)
+
 **IMPORTANT**  
 _Mobile phones will not warn you when streaming over cellular networks and can quickly eat up capped data plans. AWS **_IS NOT_** liable for data charges incurred as a part of this workshop._
 
@@ -150,6 +152,7 @@ What about participants who aren't able to attend during the scheduled session? 
 
 With the VOD transcode fleet, jobs can run much slower than real-time, emphasizing quality over real-time delivery. Additionally, if we want to create additional ABR renditions or apply alternate projection mapping filters, you can do so with the VOD transcode fleet.
 
+![Lab 2](images/arch2.png)
 
 ### Config Changes
 
@@ -217,7 +220,7 @@ In the previous two labs, a web browser retrieved the stream. This worked well f
 
 In addition to generating load, Jmeter can produce basic results visualization in a webpage. This will prove useful to see how caching affects server response time. This lab will focus only on response time, however, additional metrics can be gathered by implementing Real User Metrics in the player or implementing custom CloudWatch metrics for the service. Check out [Raising the Bar on Video Streaming Quality](https://www.youtube.com/watch?v=IGXrnQviFLc) for a fantasitc overview of how Amazon Video addresses this common challenge.
 
-{architecture diagram}
+![Lab 3](images/arch3.png)
 
 1\. To begin, deploy the following Cloudformation template. The goal is to simulate load coming from real users, so this template launches in Singapore (ap-southeast-1). If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0. Make sure to specify this key while launching the stack as you did with the previous template.
 
