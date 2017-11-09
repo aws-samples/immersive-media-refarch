@@ -11,7 +11,7 @@ In this workshop, we bring these two technologies together. Demystifying live st
 ### Requirements
 
 * AWS account - if you don't have one, it's easy and free to create one.
-* AWS IAM account with elevated privileges allowing you to interact with CloudFormation, IAM, EC2, ECS, S3, Cloudwatch, and Cloudfront.
+* AWS IAM account with elevated privileges allowing you to interact with CloudFormation, IAM, EC2, S3, Cloudwatch, and Cloudfront.
 * A workstation or laptop with an SSH client installed, such as putty on Windows or Terminal on MacOS.
 * Familiarity with bash, web servers, video processing, and streaming media is strongly encouraged, but not absolutely required.
 
@@ -219,9 +219,9 @@ In addition to generating load, Jmeter can produce basic results visualization i
 
 {architecture diagram}
 
-1\. To begin, deploy the following Cloudformation template in any region that *is not* Ireland. The goal is to simulate load coming from real users, so please use a different region. If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0.
+1\. To begin, deploy the following Cloudformation template. The goal is to simulate load coming from real users, so this template launches in Singapore (ap-southeast-1). If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0.
 
-[![Launch 360 Live Streaming Stack into any other region with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ecs-deep-learning-stack&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/load.yaml)  
+[![Launch Load Testing Stack into any other region with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=load-testing&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/load.yaml)  
 
 
 2\. If necessary, start the test stream on the origin. You may have to SSH back into the instance or switch back to the Ireland region to retrieve the IP address.
