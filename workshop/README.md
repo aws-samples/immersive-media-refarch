@@ -139,18 +139,16 @@ Now for the exciting part - _playing the live stream_. Within the CloudFormation
 
 <pre>http://<b>YOUR_TRANSCODINGEGRESS_BUCKET</b>.s3-website-REGION.amazonaws.com/?url=http://<b>primaryOriginElasticIp</b>/hls/test.m3u8</pre>
 
-You should now see spherical colorbars and hear a test tone from the system. Success!
+You should now see spherical colorbars and hear a test tone from the system. Success! If you want to mute the test tone, right-click the Chrome browser tab and select 'Mute Tab'
 
-![Watching the HLS manifest](images/bars.gif)
+![Colorbars](images/bars.gif)
 
 
 ## Lab 2 - Video on Demand
 
-What about participants who aren't able to attend during the scheduled session?You should create a Video-on-Demand recording that allows anyone to virtually attend when they chose. Thankfully, the nginx-rtmp record directive that works like a VCR. You'll use this to capture the live source and then transcode the recording with a fleet of EC2 instances. 
+What about participants who aren't able to attend during the scheduled session? You should create a Video-on-Demand recording that allows anyone to virtually attend when they chose. Thankfully, the nginx-rtmp record directive that works like a VCR. You'll use this to capture the live source and then transcode the recording with a fleet of EC2 instances. 
 
-{diagram}
-
-With the VOD transcode fleet, jobs can run much slower than real-time, emphasizing quality over real-time delivery. Additionally, if we want to create additional ABR renditions or apply alternate projection mapping filters, you'll need a file-based transcoder.
+With the VOD transcode fleet, jobs can run much slower than real-time, emphasizing quality over real-time delivery. Additionally, if we want to create additional ABR renditions or apply alternate projection mapping filters, you can do so with the VOD transcode fleet.
 
 
 ### Config Changes
@@ -160,7 +158,9 @@ With the VOD transcode fleet, jobs can run much slower than real-time, emphasizi
 
 <pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginElasticIp</b></i></pre>
 
-Modify the nginx configuration to include the record directive. This records all audio/video streams to /var/lib/nginx/rec, rolls over the file when the size reaches 128M, and, upon recording creation, executes a script to upload the asset into S3. A full listing and description of the nginx-rtmp directives can be found [here](https://github.com/arut/nginx-rtmp-module/wiki/Directives).
+Modify the nginx configuration to include the record directive. This records all audio/video streams to /var/lib/nginx/rec, rolls over the file when the size reaches 128M, and, upon recording creation, executes a script to upload the asset into S3. A full listing and description of the nginx-rtmp directives, variables, and other components can be found [here](https://github.com/arut/nginx-rtmp-module/wiki/Directives).
+
+To modify the configuration file, use nano or vim. To navigate with nano, use arrow keys. When complete hit CTRL+X, Y (yes to save), then ENTER to confirm the filename.
 
 <pre>$ sudo nano /etc/nginx/rtmp.d/rtmp.conf</pre>
 
@@ -184,39 +184,32 @@ Recording begins when a stream is published to the nginx application. Upon strea
 
 With the configuration updates in place, you can now test the full system functionality. There's a few components to the VOD system, so you'll want to examine each one to validate proper execution. 
 
-1\. SSH into the origin and start the ffmpeg test stream
+1\. FFmpeg will have stopped upon origin restar, so SSH into the origin and start the ffmpeg test stream. Let it run for ~10 seconds, then stop it by pressing CTR+C
 
 <pre>
 $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 160k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
 </pre>
 
-2\. Open the SQS console, select the queue containing _**-transcodingQueue**_, select _Queue Actions_ from the menu and then _View Messages_. Finally, to view messages as they appear, click the blue _Start Polling for Messages_ button
-
-{image example}
-
-Simple Queue Service (SQS) decouples the transcode requests from the transcode fleet. It carries the S3 bucket event, generated when a new recording is put into **_s3IngressBucket_**, and serves as a job queue for the _**transcodingSpotFleet**_. In the event that an instance fails or is terminated by EC2 Spot, events will return to the queue and be processed by another node. This system also uses the queue depth to autoscale _**transcodingSpotFleet**_ based on number of recordings waiting to be processed, though it has been set to 1 to minimze workshop costs.
-
-3\. Back in the terminal window, stop the ffmpeg test source by pressting ctrl+c
-
-4\. Confirm message has been generated in the queue
-
-![Queue Message](images/queue_message.png)
+Simple Queue Service (SQS) decouples the transcode requests from the transcode fleet. It carries the S3 bucket events, generated when a new recording is put into **_s3IngressBucket_**, and serves as a job queue for the _**transcodingSpotFleet**_. In the event that an instance fails or is terminated by EC2 Spot, events will return to the queue and be processed by another node. This system also uses the queue depth to autoscale _**transcodingSpotFleet**_ based on number of recordings waiting to be processed, though it has been set to 1 to minimze workshop costs.
 
 The transcode worker is running a polling script every 5 seconds to pull down any new job from SQS. By now, it should be processing a job. We can confirm this by looking at the CPU utilization, viewing the notification in the Cloudwatch Log Stream, or by simply waiting for the output to appear in the S3 bucket _**transcodingEgressBucketId**_.
 
 5\. In the EC2 console, search for 'transcoding', this will filter for the EC2 instance we have deployed that has the _transcodingSecurityGroup_ attached. Select the resulting instance and, at the bottom of the console, select the _Monitoring_ tab. Here, we should see a sharp incline in the CPU utilization while the instance is processing.
 
-{cpu incline example}
+![Transcoder CPU](images/20.png)
 
 6\. When the CPU metric goes down, our VOD transcode is complete. Navigate to the S3 console and search/select the bucket containing _**transcodingEgress**_. Here, you should see a key starting with test-_TIMESTAMP/_, this was the output directory of the transcode job and is now the object prefix within S3. Within, there should be many transport stream (.ts) and manifest (.m3u8) objects. Select the MANIFEST.m3u8 and note the link, this is our playback URL for the video-on-demand recording, now transcoded for adaptive bitrate delivery.
+
+![Transcoder CPU](images/21.png)![Transcoder CPU](images/22.png)
 
 7\. To test playback, use the client from Lab 1. If you've closed the tab, the URL can be found by opening the Cloudformation console and selecting up the Cloudformation Output _**clientWebsiteUrl**_. Next, update the ?url= query parameter with the newly created m3u8 URL and confirm that the VOD asset plays for approximately the duration ffmpeg was streaming. 
 
 <pre>http://<b><i>clientWebsiteUrl</b></i>?url=https://s3-us-west-2.amazonaws.com/<b><i>transcodingEgressBucketId</b></i>/test-1508866984/MANIFEST.M3U8
 </pre>
 
-You've successfully modified the architecture to record a live stream, transcode it with EC2, and host it with an S3 bucket. Great work! With our live and VOD functional, let's make sure it stays operational during the event, no matter how many people tune in!
+Notice that the bitrate/quality starts off low, then gets better over time? This is the ABR doing it's work.
 
+You've successfully modified the architecture to record a live stream, transcode it with EC2, and host it with an S3 bucket. Great work! With our live and VOD functional, let's make sure it stays operational during the event, no matter how many people tune in!
 
 ## Lab 3 - Reliability
 
@@ -226,9 +219,9 @@ In addition to generating load, Jmeter can produce basic results visualization i
 
 {architecture diagram}
 
-1\. To begin, deploy the following Cloudformation template in any region that *is not* Ireland. The goal is to simulate load coming from real users, so use a different region. If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0.
+1\. To begin, deploy the following Cloudformation template in any region that *is not* Ireland. The goal is to simulate load coming from real users, so please use a different region. If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0.
 
-[![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ecs-deep-learning-stack&templateURL=https://s3.amazonaws.com/ecs-dl-workshop-us-west-2/ecs-deep-learning-workshop.yaml)  
+[![Launch 360 Live Streaming Stack into any other region with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ecs-deep-learning-stack&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/load.yaml)  
 
 
 2\. If necessary, start the test stream on the origin. You may have to SSH back into the instance or switch back to the Ireland region to retrieve the IP address.
