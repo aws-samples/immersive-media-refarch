@@ -284,7 +284,8 @@ Let's test this tier to see how it changes the performance charataristics of the
 
 3\. In the EC2 console, watch the load test impact origin CPU in near real-time by selecting the instance, then the _Monitoring_ tab. The origin load is negligible compared to the 4% from the origin load test, success!
 
-4\. When Jmeter is complete, access the results hosted on the load test instance in Singapore via a web browser.
+4\. When Jmeter is complete, access the results hosted on the load test instance in Singapore via a web browser. Click on the directory named _HHMMSS_ timestamp associated with the jmeter test and review the results.
+
 
 <pre>http://<b><i>loadTestingEC2Instance</b></i>/results/</pre>
 
@@ -313,7 +314,7 @@ With this configuration, initial client requests to Cloudfront and cache misses 
 
 <pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=150 -Jrampup=15 -Jhost <b><i>cloudfrontDistributionDns</b></i></pre>
 
-5\. When Jmeter is complete, access the results via a web browser. Compare the response time metrics against the previous test.
+5\. When Jmeter is complete, access the results via a web browser.  Click on the directory named _HHMMSS_ timestamp associated with the jmeter test and review the results. Compare the response time metrics against the previous test.
 
 <pre>http://<b><i>loadTestingEC2Instance</b></i>/results/</pre>
 
@@ -385,7 +386,6 @@ When Jmeter is complete, you can access the results via a web browser.
 
 <pre>http://<b><i>loadTestingEc2Instance</b></i>/results/</pre> 
 
- Click on the directory named _HHMMSS_ timestamp associated with the jmeter test and review the results.
 
  {image of origin results, don't confuse with ffmpeg}
 
