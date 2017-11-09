@@ -73,16 +73,16 @@ Click on the Deploy to AWS button below to launch the required infrastructure in
 
  [![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=immersive-live-streaming-stack&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/start.yaml)  
 
-The template will automatically bring you to the CloudFormation Dashboard and start the stack creation process in the specified region. Click "Next" on the page it brings you to. Do not change anything on the first screen.
+The template will automatically bring you to the CloudFormation Dashboard and start the stack creation wizard. Click "Next". Do not change anything on the first screen.
 
-![CloudFormation PARAMETERS](/images/cf-initial.png)
+![CloudFormation PARAMETERS](/images/00.png)
 
 The template sets up a VPC, IAM roles, S3 bucket, SQS, ALB, and EC2 Instances running various components of the solution - origin, cache, and transcode.  The idea is to provide a contained environment, so as not to interfere with any other provisioned resources in your account.  In order to demonstrate cost optimization strategies, the EC2 Instances are [EC2 Spot Instances](https://aws.amazon.com/ec2/spot/) deployed by [Spot Fleet](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet.html).  If you are new to [CloudFormation](https://aws.amazon.com/cloudformation/), take the opportunity to review the [template](https://github.com/awslabs/immersive-media-refarch/blob/master/workshop/start.yaml) during stack creation.
 
 **IMPORTANT**  
 *On the parameter selection page of launching your CloudFormation stack, make sure to choose the key pair that you created in step 1. If you don't see a key pair to select, check your region and try again.*
 
-![CloudFormation PARAMETERS](/images/cf-params.png)
+![CloudFormation PARAMETERS](/images/01.png)
 
 **Create the stack**  
 After you've selected your ssh key pair, click **Next**. On the **Options** page, accept all defaults- you don't need to make any changes. Click **Next**. On the **Review** page, under **Capabilities** check the box next to **"I acknowledge that AWS CloudFormation might create IAM resources."** and click **Create**. Your CloudFormation stack is now being created.
@@ -90,7 +90,7 @@ After you've selected your ssh key pair, click **Next**. On the **Options** page
 **Checkpoint**  
 Periodically check on the stack creation process in the CloudFormation Dashboard.  Your stack should show status **CREATE\_COMPLETE** in roughly 5-10 minutes.  In the Outputs tab, take note of the **primaryOriginElasticIp** and **clientWebsiteUrl** values; you will need these in the following labs.     
 
-![CloudFormation CREATION\_COMPLETE](/images/cf-complete.png)
+![CloudFormation CREATION\_COMPLETE](/images/02.png)
 
 When your stack moves to a **CREATE\_COMPLETE** status, you won't necessarily see EC2 instances yet. If you don't, go to the EC2 console and click on **Spot Requests**. There you will see the pending or fulfilled spot requests. Once they are fulfilled, you will see your EC2 instances within the EC2 console.
 
@@ -103,19 +103,19 @@ In this lab, you will live stream to the origin and confirm that it plays back w
 In the real-world, content is captured in real-time via a camera, compressed, and sent to a central location for further processing and distribution. Broadcasting from a remote production location to distribution infrastructure is called *Contribution* and it requires careful consideration of the network charactaristics between these two geographic points.
 
 - Does the remote location have dedicated bandwidth, public internet connectivity, cellular or nothing at all?
+- Which protocols are supported by on-premise equipment and the origin? Which provides the best tolerance for network anomolies?
+- Do we require redundant contribution streams over multiple network paths?
 - What data rate is required to create a quality end-user experience?
-- Do we need redundant contribution streams over multiple network paths?
 - Do users have latency expectations?
-- Which protocol(s) are supported by on-premise equipment and the origin?
 
 In a development environment, you can avoid most of these questions by using a local test signal to simulate a live stream. FFmpeg has been built into the origin and you'll use it to generate the live signal. But, don't forget to connect other devices if bandwidth is available. 
 
-**IMPORTANT**
+**IMPORTANT**  
 _Mobile phones will not warn you when streaming over cellular networks and can quickly eat up capped data plans. AWS **_IS NOT_** liable for data charges incurred as a part of this workshop._
 
 From the Cloudformation console, select the stack you created, then Outputs. Find _**primaryOriginElasticIp**_ and note the value. This is the IP address of your media origin. 
 
-{image of cloudformation console, highligh pimaryOrigin}
+![CloudFormation primaryOriginElasticIp](/images/01.png)
 
 SSH into the origin instance with the following command:
 
@@ -133,7 +133,7 @@ With the test stream running and connected to the origin, new [Apple HLS](https:
 
 <pre>$ sudo watch -n 0.5 cat /var/lib/nginx/hls/test_1280/index.m3u8</pre>
 
-{image or gif of updating manifest file}
+![Watching the HLS manifest](/images/tty.gif)
 
 Now for the exciting part - _playing the live stream_. Within the CloudFormation console, find the Output listed as _**clientWebsiteUrl**_. This is a static website, built with [A-Frame](https://aframe.io/) and [HLS.js](https://github.com/video-dev/hls.js/), hosted in an S3 bucket. Copy the link or open it in a new browser tab, but note that playback requires a value for the _url_ query string parameter at the end. To view the stream from the origin combine the _**primaryOriginElasticIp**_ with the nginx-rtmp application (hls) and stream name (test). You'll end up with something similar to this example:
 
@@ -334,6 +334,7 @@ Here's a few extra things to try if you still have time left over during the wor
 
 * Try using your own camera and RTMP capable encoder to contribute a source to the origin (beware bandwidth requirements)
 * Try adjusting the fleet target size, creating a few VOD recordings, and watching the _**transcodingSpotFleet**_ scale up
+* Try creating a Cloudfront Distribution for the VOD bucket and web client
 
 Please submit pull requests to this workshop or associated parent reference architecture. We're happy to help you get started with any of these items:
 
