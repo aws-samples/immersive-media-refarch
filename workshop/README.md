@@ -40,7 +40,7 @@ The command starts after $.  Words that are ***UPPER_ITALIC_BOLD*** indicate a v
 
 ### Cleanup and Disclaimer
 
-This section will appear again below as a reminder because you will be deploying infrastructure on AWS which will have an associated cost. Fortunately, this workshop should take no more than 2.5 hours to complete, and uses primarily EC2 Spot instances, so costs will be minimal. See the appendix for an estimate of what this workshop should cost to run. When you're done with the workshop, follow these steps to make sure everything is cleaned up.
+This section will appear again below as a reminder because you will be deploying infrastructure on AWS which will have an associated cost. Fortunately, this workshop should take no more than 2.5 hours to complete, and uses primarily EC2 Spot instances, so costs will be minimal (less than $5 USD). When you're done with the workshop, follow these steps to make sure everything is cleaned up.
 
 * Delete any manually created resources throughout the labs.
 * Delete any files stored on S3.
@@ -219,7 +219,7 @@ In addition to generating load, Jmeter can produce basic results visualization i
 
 {architecture diagram}
 
-1\. To begin, deploy the following Cloudformation template. The goal is to simulate load coming from real users, so this template launches in Singapore (ap-southeast-1). If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0.
+1\. To begin, deploy the following Cloudformation template. The goal is to simulate load coming from real users, so this template launches in Singapore (ap-southeast-1). If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0. Make sure to specify this key while launching the stack as you did with the previous template.
 
 [![Launch Load Testing Stack into any other region with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=load-testing&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/load.yaml)  
 
@@ -233,7 +233,7 @@ $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=s
 </pre>
 
 
-3\. From the EC2 Console in the new region, determine the IP address of the instance deployed by the recent template, then SSH into it.
+3\. After the stack has completed (it will only take a few mintes), from the EC2 Console in singapore, determine the IP address of the instance deployed by the recent template, then SSH into it.
 
 <pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
 
@@ -243,11 +243,13 @@ _Note that the HLS path /hls/test.m3u8 is hardcoded into the jmx file. If you're
 
 <pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=150 -Jrampup=15 -Jhost <b><i>originElasticIpAddress</b></i></pre>
 
-5\. In the EC2 console, watch the test impact CPU in near real-time by selecting the instance, then the _Monitoring_ tab.
+![Transcoder CPU](images/31.png)
+
+5\. In the EC2 console, back in Ireland, watch the test impact CPU in near real-time by searching 'origin', selecting the instance, then the _Monitoring_ tab.
 
 {screenshot of uptick in cpu}
 
-The load on the origin, omitting long-running processes and ffmpeg, is ~2%. This isn't much, but remember, you only simulated 150 clients. What if you were expecting 150,000 concurrent viewers? (Hey, who knows, maybe it's a really popular workshop!). It would be difficult to find an instance with 2000% more CPU power and costly to send the _contribution_ feed to multiple origins. Recall that this was one of the early considerations and the reason you're using a test source on the origin itself. Bandwidth can be expensive, especially from events in Las Vegas!
+The load on the origin, omitting long-running processes and ffmpeg, is ~4%. This isn't much, but remember, you only simulated 150 clients. What if you were expecting 400,000 concurrent viewers? (Hey, who knows, maybe it's a really popular workshop!). It would be difficult to find an instance with 2000% more CPU power and costly to send the _contribution_ feed to multiple origins. Recall that this was one of the early considerations and the reason you're using a test source on the origin itself. Bandwidth can be expensive, especially from events in Las Vegas!
 
 So, what to do? You reduce load on the origin by introducing caches.
 
@@ -261,13 +263,13 @@ For the purposes of live streaming a [proxy cache](https://www.wikiwand.com/en/W
 * Use multiple upstream origins for 1+1 redundancy
 * Terminate SSL connections
 
-Just like dividing responsibility between cooks (origin) and the wait staff (caches) at your favorite resturant, you can use this pattern to improve reliability. With deterministic load on the origin, you don't have to worry about it being crushed by unforseen load, rendering the service unavailable. Afterall, cooks should be making declicious food, not taking orders and serving it. (I'm getting hungry... but back to the video!)
+By adding a cache, you divide responsibility between the origin and cache to serve the content and introduce some degree of determinism. In a perfect world, only expect one request per cache node for the same object. With deterministic load on the origin, you don't have to worry about it being crushed by unforseen load, rendering the service unavailable.
 
 The origin converts the contribution stream into adaptive bitrate, while the cache tier serves and caches the response data for a period of time or the _Time-To-Live_ value (TTL). The TTL is set by the origin and controls downstream cache behavior. For Apple HLS, especially live, it's important to control the segment manifest TTL seperately from the media segments. The segment manifest updates with every new segment made available by the origin and, if it's cached too long, could cause client issues.
 
-{diagram of caching in action}
+The configuration file on the origin, located in /etc/nginx/default.d/rtmp.conf or [here](start/origin/nginx/default.d/rtmp.conf) in this repository show the TTL parameters for the different objects.
 
-**_edgeCacheSpotFleet_**, managed by an EC2 Spot Fleet, uses Application Load Balancer and an Autoscaling Group to dynamically scale based on load. To keep costs at a minimum, this workshop defaults to a single instance, but you can override this in the future by changing the _**edgeCacheSpotFleetMaximumCapacity**_ parameter while launching the stack in Cloudformation.
+To keep costs at a minimum, this workshop defaults to a single instance, but you can easily implement an autoscaling group to dynamically scale this tier to meet large demand spikes. 
 
 Let's test this tier to see how it changes the performance charataristics of the system.
 
@@ -280,26 +282,28 @@ Let's test this tier to see how it changes the performance charataristics of the
 
 <pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=150 -Jrampup=15 -Jhost <b><i>applicationLoadBalancerDns</b></i></pre>
 
-3\. In the EC2 console, watch the load test impact origin CPU in near real-time by selecting the instance, then the _Monitoring_ tab. The origin load is almost invisible compared to the 2% from the previous test, success!
+3\. In the EC2 console, watch the load test impact origin CPU in near real-time by selecting the instance, then the _Monitoring_ tab. The origin load is negligible compared to the 4% from the origin load test, success!
 
-4\. When Jmeter is complete, access the results via a web browser and explore the response time metric.
+4\. When Jmeter is complete, access the results hosted on the load test instance in Singapore via a web browser.
 
-<pre>http://<b><i>loadTestingEC2Instance</b></i>/results/<b><i>HHMMSS</b></i>/</pre>
+<pre>http://<b><i>loadTestingEC2Instance</b></i>/results/</pre>
 
-The response time metric will vary depending on client location and internet connectivity. re:Invent is a global conference for attendees all over the world, how can you improve service response time performance for any viewer, no matter the location?
+![Average response time from singapore to ireland without cloudfront](images/32.png)
+
+he response time metric is likely quite high from Singapore to Ireland, but will vary. re:Invent is a global conference for attendees all over the world, how can you improve service response time performance for any viewer, no matter the location?
 
 
 ### Content Delivery Network
 
 Introducing a [Content Delivery Network](https://www.wikiwand.com/en/Content_delivery_network) (CDN) is another common strategy to improve client performance while further decreasing load on the service components (origin, cache). We have not configured the CDN as part of this lab, so you need to configure Cloudfront before testing.
 
-1\. Open the Cloudfront console, click Create Distribution, then Get Started under the Web heading
+1\. Open the Cloudfront console, click Create Distribution, then Get Started under the Web heading.
 
-2\. Configure the Distribution by populating the Origin Domain Name field with the _**applicationLoadBalancerDns**_. The default configuration is suffecient for this workshop, scroll to the bottom of the page and click _Create Distribuion_. 
+2\. Configure the Distribution by populating the Origin Domain Name field with the _**applicationLoadBalancerDns**_. The default configuration is suffecient for this workshop, scroll to the bottom of the page and click _Create Distribuion_. It will take ~10 minutes for Cloudfront to move from 'In Progress' to 'Deployed.' Take this time to review the Cloudformation templates and configuration files contained in this workshop.
+
+![cloudfront in progress](images/33.png)
 
 With this configuration, initial client requests to Cloudfront and cache misses will be fulfilled from the **_edgeCacheSpotFleet_**. If **_edgeCacheSpotFleet_** also cache misses, requests will finally be fulfilled by the origin.
-
-{visual representation of caching}
 
 3\. Now you're ready to test. SSH into one the load testing instance
 
@@ -307,15 +311,15 @@ With this configuration, initial client requests to Cloudfront and cache misses 
 
 4\. Update the _-Jhost_ flag to point to the Domain of the Cloudfront Distribution, found in the Cloudfront console under Domain Name.
 
-{SCREENSHOT}
-
 <pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=150 -Jrampup=15 -Jhost <b><i>cloudfrontDistributionDns</b></i></pre>
 
 5\. When Jmeter is complete, access the results via a web browser. Compare the response time metrics against the previous test.
 
-<pre>http://<b><i>loadTestingEC2Instance</b></i>/results/<b><i>HHMMSS</b></i>/</pre>
+<pre>http://<b><i>loadTestingEC2Instance</b></i>/results/</pre>
 
-Adding a CDN improved client response time by a HUGE amount! The viewers will definitely appreciate the performance enhancements and the processing costs to serve all of them have decreased significantly. Win, win!
+![cloudfront results](images/34.png)
+
+Adding a CDN improved client response time by ~50%! The viewers will definitely appreciate the performance enhancements and the compute costs to serve all of them have decreased significantly. Win, win!
 
 ## Conclusion
 
@@ -335,20 +339,17 @@ Please submit pull requests to this workshop or associated parent reference arch
 * Decrease overall live latency by tuning the HLS segment sizes
 * Implement cubemap filter in VOD processing fleet to compare against live spherical projection
 * Implement OAI so that only Cloudfront can access the origin/cache fleet
-* Implement a CI/CD testing for the Codepipeline
-
+* Implement CI/CD testing with Codepipeline to automate stack updates
 
 ### Cleanup and Disclaimer
 
-This section will appear again below as a reminder because you will be deploying infrastructure on AWS which will have an associated cost. Fortunately, this workshop should take no more than 2 hours to complete, so costs will be minimal. See the appendix for an estimate of what this workshop should cost to run. When you're done with the workshop, follow these steps to make sure everything is cleaned up.
+When you're done with the workshop, follow these steps to make sure everything is cleaned up. Remember, you used two Cloudformation templates in two seperate regions - Ireland and Singapore.
 
 * Delete any manually created resources throughout the labs.
 * Delete any files stored on S3.
 * Delete both CloudFormation stacks launched throughout the workshop.
 
 ## Appendix
-
-### Cost Breakdown
 
 ### FFmpeg Command Reference
 
