@@ -19,7 +19,7 @@ In this workshop, we bring these two technologies together. Demystifying live st
 
 The labs in this directory are designed to be completed in sequential order. If you're attending an AWS event, your host will give you an overview of the technology and expectations for each lab. If you're following along at home, we've provided the presentation materials as a pdf. Feel free to open issue tickets on the repo if you have questions or issues. 
 
-Please use a modern verion of the Google Chrome browser as this is what we've used to design the workshop. We also recommend having a scratch pad or somewhere to note important information throughout the lab.
+Please use a modern verion of the Google Chrome browser as this is what we've used to design the workshop. We also recommend having a scratch pad or somewhere to keep important information throughout the lab.
 
 **Lab 1:** Live Streaming Service
 
@@ -49,13 +49,13 @@ This section will appear again below as a reminder because you will be deploying
 
 ## Challenge
 
-Imagine that you're part of the re:Invent 2017 team. There's limited session availablity and not everyone can attend in person - what can you do? As the organizer, you could stream the sessions in regular old fixed/flat view with a narrow field-of-vision **_or_** you could raise the bar for conference streaming everywhere with a truly immersive experience. Your challenge, should you choose to accept it, is to build this system by following the labs in this workshop.
+Imagine that you're part of the re:Invent 2017 team. There's limited session availablity and not everyone can attend in person - what can you do? As the organizer, you could stream the sessions with regular old video with a fixed field-of-vision **_or_** you could raise the bar for conference streaming everywhere by streaming a truly immersive experience. Your challenge, should you choose to accept it, is to build this system by following the labs in this workshop.
 
-{insert marketecture}
+ ![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/arch.png)
 
 ## Lab 0 - Setup
 
-1\. First, you'll need to select a [region](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html). For this lab, you need to choose **Ireland**. At the top right hand corner of the AWS Console, you'll see a **Support** dropdown. To the left of that is the region selection dropdown.
+1\. First, you'll select a [region](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html). At the top right hand corner of the AWS Console, you'll see a **Support** dropdown. To the left of that is the region selection dropdown. For this lab, please use **Ireland**. 
 
 2\. Next, you need to create an SSH key pair which is used to login to the instances once provisioned.  Go to the EC2 Dashboard and click on **Key Pairs** in the left menu under Network & Security.  Click **Create Key Pair**, provide a name (can be anything, make it something memorable) when prompted, and click **Create**.  Once created, the private key in the form of .pem file will be automatically downloaded.  
 
@@ -67,13 +67,11 @@ If you're on windows you'll need to convert the .pem file to .ppk to work with p
 
 3\. We provide a CloudFormation template to help attendees get started. This template launches much of the infrastructure required, but leaves certain components for you, the participant, to implement.
 
-{architecture diagram}
-
 _Prior to launching a stack, be aware that a few of the resources launched need to be manually deleted when the workshop is over. When finished working, please review the "Workshop Cleanup" section to learn what manual teardown is required by you._
 
 Click on the Deploy to AWS button below to launch the required infrastructure in the Ireland (eu-west-1) region.
 
- [![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=ecs-deep-learning-stack&templateURL=https://s3.amazonaws.com/ecs-dl-workshop-us-west-2/ecs-deep-learning-workshop.yaml)  
+ [![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=immersive-live-streaming-stack&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/start.yaml)  
 
 The template will automatically bring you to the CloudFormation Dashboard and start the stack creation process in the specified region. Click "Next" on the page it brings you to. Do not change anything on the first screen.
 
