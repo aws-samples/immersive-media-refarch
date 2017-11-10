@@ -25,7 +25,7 @@ Please use a modern verion of the Google Chrome browser as this is what we've us
 
 **Lab 2:** Video-on-Demand Recording
 
-**Lab 3:** Reliability
+**Lab 3:** Caching and Content Delivery Networks
 
 ### Conventions
 
@@ -215,7 +215,7 @@ Notice that the bitrate/quality starts off low, then gets better over time? This
 
 You've successfully modified the architecture to record a live stream, transcode it with EC2, and host it with an S3 bucket. Great work! With our live and VOD functional, let's make sure it stays operational during the event, no matter how many people tune in!
 
-## Lab 3 - Reliability
+## Lab 3 - Caching and Content Delivery Networks
 
 In the previous two labs, a web browser retrieved the stream. This worked well for functional play testing, but now you need to simulate many simultanious client requests and validate that the system functions for more than a few users. [Apache Jmeter](https://jmeter.apache.org/) is a Java based test framework that simulates client load at scale. The Jmeter configuration is outside of the workshop scope, but we encourage you to browse the documentation and lab.jmx file to learn more.
 
@@ -295,7 +295,7 @@ Let's test this tier to see how it changes the performance charataristics of the
 
 ![Average response time from singapore to ireland without cloudfront](images/32.png)
 
-he response time metric is likely quite high from Singapore to Ireland, but will vary. re:Invent is a global conference for attendees all over the world, how can you improve service response time performance for any viewer, no matter the location?
+The response time metric is likely quite high from Singapore to Ireland, but will vary. re:Invent is a global conference for attendees all over the world, how can you improve service response time performance for any viewer, no matter the location?
 
 
 ### Content Delivery Network
