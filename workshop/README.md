@@ -249,9 +249,7 @@ _Note that the HLS path /hls/test.m3u8 is hardcoded into the jmx file. If you're
 
 ![Transcoder CPU](images/31.png)
 
-5\. In the EC2 console, back in Ireland, watch the test impact CPU in near real-time by searching 'origin', selecting the instance, then the _Monitoring_ tab.
-
-{screenshot of uptick in cpu}
+5\. In the EC2 console, back in Ireland, watch the test impact CPU in near real-time by searching 'origin', selecting the instance, then the _Monitoring_ tab. Note that FFmpeg and other process will take ~55% of CPU.
 
 The load on the origin, omitting long-running processes and ffmpeg, is ~4%. This isn't much, but remember, you only simulated 150 clients. What if you were expecting 400,000 concurrent viewers? (Hey, who knows, maybe it's a really popular workshop!). It would be difficult to find an instance with 2000% more CPU power and costly to send the _contribution_ feed to multiple origins. Recall that this was one of the early considerations and the reason you're using a test source on the origin itself. Bandwidth can be expensive, especially from events in Las Vegas!
 
@@ -287,6 +285,8 @@ Let's test this tier to see how it changes the performance charataristics of the
 <pre>$ jmeter -n -t ~/lab.jmx -l /var/www/html/results/$(date +%H%M%S).txt -e -o /var/www/html/results/$(date +%H%M%S)/ -Jthreads=150 -Jrampup=15 -Jhost <b><i>applicationLoadBalancerDns</b></i></pre>
 
 3\. In the EC2 console, watch the load test impact origin CPU in near real-time by selecting the instance, then the _Monitoring_ tab. The origin load is negligible compared to the 4% from the origin load test, success!
+
+![Origin load with and without cache..](images/after-cache.png)
 
 4\. When Jmeter is complete, access the results hosted on the load test instance in Singapore via a web browser. Click on the directory named _HHMMSS_ timestamp associated with the jmeter test and review the results.
 
