@@ -2,7 +2,7 @@
 
 ## Overview
 
-Immersive video, often referred to as VR or 360-video, allows content creators to capture and deliver unique experiences. Social Media sites have implemented immersive video into their platforms, making it widely accessible to consumers, but what of builders who seek to design our own unique experiences, where do we begin? 
+Immersive video, often referred to as VR or 360-video, allows content creators to capture and deliver unique experiences. Social Media sites have implemented immersive video into their platforms, making it widely accessible to consumers, but what of builders who seek to design our own unique experiences, where do we begin?
 
 Additionally, live streaming, a commoditized consumer product spanning far outside the realm of Social Media, still poses unique implementation challenges. One mistake can cost rightsholders revenue and, arguably worse, customer loyalty.
 
@@ -17,7 +17,7 @@ In this workshop, we bring these two technologies together. Demystifying live st
 
 ### Labs
 
-The labs in this directory are designed to be completed in sequential order. If you're attending an AWS event, your host will give you an overview of the technology and expectations for each lab. If you're following along at home, we've provided the presentation materials as a pdf. Feel free to open issue tickets on the repo if you have questions or issues. 
+The labs in this directory are designed to be completed in sequential order. If you're attending an AWS event, your host will give you an overview of the technology and expectations for each lab. If you're following along at home, we've provided the presentation materials as a pdf. Feel free to open issue tickets on the repo if you have questions or issues.
 
 Please use a modern version of the Google Chrome browser as this is what we've used to design the workshop. We also recommend having a scratch pad or somewhere to keep important information throughout the lab.
 
@@ -29,14 +29,13 @@ Please use a modern version of the Google Chrome browser as this is what we've u
 
 ### Conventions
 
-Throughout this README, we provide commands for you to run in the terminal.  These commands will look like this: 
+Throughout this README, we provide commands for you to run in the terminal.  These commands will look like this:
 
 <pre>
 $ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginIP</i></b>
 </pre>
 
 The command starts after $.  Words that are ***UPPER_ITALIC_BOLD*** indicate a value that is unique to your environment.  For example, the ***PRIVATE\_KEY.PEM*** refers to the private key of an SSH key pair that you've created, and the camelCase ***primaryOriginIP*** is a value provided found in the console, either as a CloudFormation Output or as indicated.
-
 
 ### Cleanup and Disclaimer
 
@@ -56,11 +55,11 @@ Imagine that you're part of the re:Invent 2017 team. There's limited session ava
 
 ## Lab 0 - Setup
 
-1\. First, you'll select a [region](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html). At the top right hand corner of the AWS Console, you'll see a **Support** drop down. To the left of that is the region selection drop down. For this lab, please use **EU (Ireland)**. 
+1\. First, you'll select a [region](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html). At the top right hand corner of the AWS Console, you'll see a **Support** drop down. To the left of that is the region selection drop down. For this lab, please use **EU (Ireland)**.
 
-2\. Next, you need to create an SSH key pair which is used to login to the instances once provisioned.  Go to the EC2 Dashboard and click on **Key Pairs** in the left menu under Network & Security.  Click **Create Key Pair**, provide a name (can be anything, make it something memorable) when prompted, and click **Create**.  Once created, the private key in the form of .pem file will be automatically downloaded.  
+2\. Next, you need to create an SSH key pair which is used to login to the instances once provisioned.  Go to the EC2 Dashboard and click on **Key Pairs** in the left menu under Network & Security.  Click **Create Key Pair**, provide a name (can be anything, make it something memorable) when prompted, and click **Create**.  Once created, the private key in the form of .pem file will be automatically downloaded.
 
-If you're using linux or mac, change the permissions of the .pem file to be less open.  
+If you're using linux or mac, change the permissions of the .pem file to be less open.
 
 <pre>$ chmod 400 <b><i>PRIVATE_KEY.PEM</i></b></pre>
 
@@ -80,16 +79,16 @@ The template will automatically bring you to the CloudFormation Dashboard and st
 
 The template sets up a VPC, IAM roles, S3 bucket, SQS, ALB, and EC2 Instances running various components of the solution - origin, cache, and transcode.  The idea is to provide a contained environment, so as not to interfere with any other provisioned resources in your account.  In order to demonstrate cost optimization strategies, the EC2 Instances are [EC2 Spot Instances](https://aws.amazon.com/ec2/spot/) deployed by [Spot Fleet](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet.html).  If you are new to [CloudFormation](https://aws.amazon.com/CloudFormation/), take the opportunity to review the [template](https://github.com/awslabs/immersive-media-refarch/blob/master/workshop/start.yaml) during stack creation.
 
-**IMPORTANT**  
+**IMPORTANT**
 *On the parameter selection page of launching your CloudFormation stack, make sure to choose the key pair that you created in step 1. If you don't see a key pair to select, check your region and try again.*
 
 ![CloudFormation PARAMETERS](images/01.png)
 
-**Create the stack**  
+**Create the stack**
 After you've selected your ssh key pair, click **Next**. On the **Options** page, accept all defaults- you don't need to make any changes. Click **Next**. On the **Review** page, under **Capabilities** check the box next to **"I acknowledge that AWS CloudFormation might create IAM resources."** and click **Create**. Your CloudFormation stack is now being created.
 
-**Checkpoint**  
-Periodically check on the stack creation process in the CloudFormation Dashboard.  Your stack should show status **CREATE\_COMPLETE** in roughly 5-10 minutes.  In the Outputs tab, take note of the **primaryOriginElasticIp** and **clientWebsiteUrl** values; you will need these in the following labs.     
+**Checkpoint**
+Periodically check on the stack creation process in the CloudFormation Dashboard.  Your stack should show status **CREATE\_COMPLETE** in roughly 5-10 minutes.  In the Outputs tab, take note of the **primaryOriginElasticIp** and **clientWebsiteUrl** values; you will need these in the following labs.
 
 ![CloudFormation CREATION\_COMPLETE](images/02.png)
 
@@ -103,22 +102,22 @@ In this lab, you will live stream to the origin and confirm that it plays back w
 
 In the real-world, content is captured in real-time via a camera, compressed, and sent to a central location for further processing and distribution. Broadcasting from a remote production location to distribution infrastructure is called *Contribution* and it requires careful consideration of the network characteristics between these two geographic points.
 
-- Does the remote location have dedicated bandwidth, public internet connectivity, cellular or nothing at all?
-- Which protocols are supported by on-premise equipment and the origin? Which provides the best tolerance for network anomalies?
-- Do we require redundant contribution streams over multiple network paths?
-- What data rate is required to create a quality end-user experience?
-- Do users have latency expectations?
+* Does the remote location have dedicated bandwidth, public internet connectivity, cellular or nothing at all?
+* Which protocols are supported by on-premise equipment and the origin? Which provides the best tolerance for network anomalies?
+* Do we require redundant contribution streams over multiple network paths?
+* What data rate is required to create a quality end-user experience?
+* Do users have latency expectations?
 
 In a development environment, you can avoid most of these questions by using a local test signal to simulate a live stream. FFmpeg has been built into the origin and you'll use it to generate the live signal. But, don't forget to connect other devices if bandwidth is available. 
 
-**IMPORTANT**  
+**IMPORTANT**
 _Mobile phones will not warn you when streaming over cellular networks and can quickly eat up capped data plans. AWS **_IS NOT_** liable for data charges incurred as a part of this workshop._
 
 With that said, here's what we'll be building in this lab. Let's get started.
 
 ![Lab 1](images/arch1.png)
 
-1\. From the CloudFormation console, select the stack you created, then Outputs. Find _**primaryOriginElasticIp**_ and note the value. This is the IP address of your media origin. 
+1\. From the CloudFormation console, select the stack you created, then Outputs. Find _**primaryOriginElasticIp**_ and note the value. This is the IP address of your media origin.
 
 ![CloudFormation primaryOriginElasticIp](images/10.png)
 
@@ -138,7 +137,6 @@ $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=s
 
 <pre>$ sudo watch -n 0.5 cat /var/lib/nginx/hls/test_1280/index.m3u8</pre>
 
-
 5\. Now for the exciting part - _playing the live stream_. Within the CloudFormation console, find the Output listed as _**clientWebsiteUrl**_. This is a static website, built with [A-Frame](https://aframe.io/) and [HLS.js](https://github.com/video-dev/hls.js/), hosted in an S3 bucket. Copy the link or open it in a new browser tab, but note that playback requires a value for the _url_ query string parameter at the end. To view the stream from the origin combine the _**primaryOriginElasticIp**_ with the nginx-rtmp application (hls) and stream name (test). You'll end up with something similar to this example:
 
 <pre>http://<b>YOUR_TRANSCODINGEGRESS_BUCKET</b>.s3-website-REGION.amazonaws.com/?url=http://<b>primaryOriginElasticIp</b>/hls/test.m3u8</pre>
@@ -147,7 +145,6 @@ You should now see spherical colorbars and hear a test tone from the system. Suc
 
 ![Colorbars](images/bars.gif)
 
-
 ## Lab 2 - Video on Demand
 
 What about participants who aren't able to attend during the scheduled session? You should create a Video-on-Demand recording that allows anyone to virtually attend when they chose. In this lab, use the nginx-rtmp _record_ directive to capture the live source, then transcode it with a fleet of EC2 instances. With the VOD transcode fleet, jobs can run much slower than real-time, emphasizing quality over real-time delivery. Additionally, if we want to create additional ABR renditions or apply alternate projection mapping filters, you can do so with the VOD transcode fleet.
@@ -155,7 +152,6 @@ What about participants who aren't able to attend during the scheduled session? 
 ![Lab 2](images/arch2.png)
 
 ### Config Changes
-
 
 1\. SSH into the Origin
 
@@ -167,7 +163,8 @@ To modify the configuration file, use nano or vim. To navigate with nano, use ar
 
 <pre>$ sudo nano /etc/nginx/rtmp.d/rtmp.conf</pre>
 
-**Configuration file after Changes**
+_Configuration file after Changes_
+
 ```
    application live {
       # FOR LAB, INSERT RECORDING CONFIGURATION BELOW THIS COMMENT
@@ -187,7 +184,7 @@ To modify the configuration file, use nano or vim. To navigate with nano, use ar
 
 Recording begins when a stream is published to the nginx application. Upon stream stop, nginx-rtmp finishes the recording and executes a script to upload into **_s3IngressBucket_**. New objects in this bucket generate an event, which is published to _**transcodingQueue**_. _**transcodingSpotFleet**_ periodically polls this queue and transcodes the recordings and resulting ABR outputs are uploaded into **_s3EgressBucket_**, the same bucket hosting our client page.
 
-With the configuration updates in place, you can now test the full system functionality. There's a few components to the VOD system, so you'll want to examine each one to validate proper execution. 
+With the configuration updates in place, you can now test the full system functionality. There's a few components to the VOD system, so you'll want to examine each one to validate proper execution.
 
 1\. FFmpeg will have stopped upon origin restart, so SSH into the origin and start the ffmpeg test stream. Let it run for ~10 seconds, then stop it by pressing CTR+C
 
@@ -207,7 +204,7 @@ The transcode worker is running a polling script every 5 seconds to pull down an
 
 ![Transcoder CPU](images/21.png)![Transcoder CPU](images/22.png)
 
-7\. To test playback, use the client from Lab 1. If you've closed the tab, the URL can be found by opening the CloudFormation console and selecting up the CloudFormation Output _**clientWebsiteUrl**_. Next, update the ?url= query parameter with the newly created m3u8 URL and confirm that the VOD asset plays for approximately the duration ffmpeg was streaming. 
+7\. To test playback, use the client from Lab 1. If you've closed the tab, the URL can be found by opening the CloudFormation console and selecting up the CloudFormation Output _**clientWebsiteUrl**_. Next, update the ?url= query parameter with the newly created m3u8 URL and confirm that the VOD asset plays for approximately the duration ffmpeg was streaming.
 
 <pre>http://<b><i>clientWebsiteUrl</b></i>?url=https://s3-us-west-2.amazonaws.com/<b><i>transcodingEgressBucketId</b></i>/test-1508866984/MANIFEST.M3U8
 </pre>
@@ -226,8 +223,7 @@ In addition to generating load, Jmeter can produce basic results visualization i
 
 1\. To begin, deploy the following CloudFormation template. The goal is to simulate load coming from real users, so this template launches in Singapore (ap-southeast-1). If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0. Make sure to specify this key while launching the stack as you did with the previous template.
 
-[![Launch Load Testing Stack into any other region with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/CloudFormation/home?region=ap-southeast-1#/stacks/new?stackName=load-testing&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/load.yaml)  
-
+[![Launch Load Testing Stack into any other region with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/CloudFormation/home?region=ap-southeast-1#/stacks/new?stackName=load-testing&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/load.yaml)
 
 2\. If necessary, start the test stream on the origin. You may have to SSH back into the instance or switch back to the Ireland region to retrieve the IP address.
 
@@ -236,7 +232,6 @@ In addition to generating load, Jmeter can produce basic results visualization i
 <pre>
 $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 160k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
 </pre>
-
 
 3\. After the stack has completed (it will only take a few minutes), from the EC2 Console in singapore, determine the IP address of the instance deployed by the recent template, then SSH into it.
 
@@ -276,7 +271,6 @@ To keep costs at a minimum, this workshop defaults to a single instance, but you
 
 Let's test this tier to see how it changes the performance characteristics of the system.
 
-
 1\. SSH into the load testing instance if you haven't already done so.
 
 <pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
@@ -291,13 +285,11 @@ Let's test this tier to see how it changes the performance characteristics of th
 
 4\. When Jmeter is complete, access the results hosted on the load test instance in Singapore via a web browser. Click on the directory named _HHMMSS_ timestamp associated with the jmeter test and review the results.
 
-
 <pre>http://<b><i>loadTestingEC2Instance</b></i>/results/</pre>
 
 ![Average response time from singapore to ireland without CloudFront](images/32.png)
 
 The response time metric is likely quite high from Singapore to Ireland, but will vary. re:Invent is a global conference for attendees all over the world, how can you improve service response time performance for any viewer, no matter the location?
-
 
 ### Content Delivery Network
 
@@ -329,7 +321,7 @@ Adding a CDN improved client response time by ~50%! The viewers will definitely 
 
 ## Conclusion
 
-We hope you enjoyed the workshop and are inspired to incorporate these learnings into your own video streaming projects. Please submit any questions or issues to the github repo and we'll do our best to answer. 
+We hope you enjoyed the workshop and are inspired to incorporate these learnings into your own video streaming projects. Please submit any questions or issues to the github repo and we'll do our best to answer.
 
 ## To Try or Build
 
