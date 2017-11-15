@@ -117,11 +117,11 @@ Outputs:
       Ref: transcodingSpotFleet
 Parameters:
   edgeCacheSpotFleetMaximumCapacity:
-    Default: 6
+    Default: 1
     Description: Maximum number of EC2 Spot Instances to scale the edge cache Spot fleet
     Type: Number
   edgeCacheSpotFleetTargetCapacity:
-    Default: 2
+    Default: 1
     Description: Number of EC2 Spot Instances to initially launch in the edge cache Spot fleet
     Type: Number
   keyName:
@@ -133,11 +133,11 @@ Parameters:
       to 0.0.0.0/0
     Type: String
   spotInstancePrice:
-    Default: 0.159
+    Default: 0.226
     Description: Maximum Spot Instance price per hour per instance
     Type: Number
   transcodingSpotFleetMaximumCapacity:
-    Default: 6
+    Default: 1
     Description: Maximum number of EC2 Spot Instances to scale the transcoding Spot fleet
     Type: Number
   transcodingSpotFleetTargetCapacity:
@@ -271,45 +271,6 @@ Resources:
           - spotFleetRole
           - Arn
         LaunchSpecifications:
-        - IamInstanceProfile:
-            Arn:
-              Fn::GetAtt:
-              - spotFleetInstanceProfile
-              - Arn
-          ImageId:
-            Fn::FindInMap:
-            - amazonLinuxAmi
-            - Ref: AWS::Region
-            - AMI
-          InstanceType: c4.large
-          KeyName:
-            Ref: keyName
-          Monitoring:
-            Enabled: true
-          SecurityGroups:
-          - GroupId:
-              Ref: edgeCacheSecurityGroup
-          - GroupId:
-              Ref: icmpSecurityGroup
-          SubnetId:
-            Fn::Join:
-            - ','
-            - - Ref: publicSubnet1
-              - Ref: publicSubnet2
-          UserData:
-            Fn::Base64:
-              Fn::Sub: '#!/bin/bash -xe
-
-                yum -y install git
-
-                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
-
-                REGION=${AWS::Region} APPLICATIONLOADBALANCERTARGETGROUP=${applicationLoadBalancerTargetGroup}
-                CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup} EGRESSBUCKETWEBSITEURL=${transcodingEgressBucket.WebsiteURL}
-                PRIMARYORIGINPRIVATEIP=${primaryOriginElasticNetworkInterface.PrimaryPrivateIpAddress}
-                WAITCONDITIONHANDLE="${edgeCacheSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/complete/user-data-edge.sh
-
-                '
         - IamInstanceProfile:
             Arn:
               Fn::GetAtt:
@@ -487,42 +448,7 @@ Resources:
             - amazonLinuxAmi
             - Ref: AWS::Region
             - AMI
-          InstanceType: c4.xlarge
-          KeyName:
-            Ref: keyName
-          Monitoring:
-            Enabled: true
-          SecurityGroups:
-          - GroupId:
-              Ref: originSecurityGroup
-          - GroupId:
-              Ref: icmpSecurityGroup
-          SubnetId:
-            Ref: publicSubnet1
-          UserData:
-            Fn::Base64:
-              Fn::Sub: '#!/bin/bash -xe
-
-                yum -y install git
-
-                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
-
-                REGION=${AWS::Region} INGRESSBUCKET=${transcodingIngressBucket} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
-                ENI_ID=${primaryOriginElasticNetworkInterface} ALLOCATION_ID=${primaryOriginElasticIp.AllocationId}
-                WAITCONDITIONHANDLE="${primaryOriginSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/complete/user-data-origin.sh
-
-                '
-        - IamInstanceProfile:
-            Arn:
-              Fn::GetAtt:
-              - spotFleetInstanceProfile
-              - Arn
-          ImageId:
-            Fn::FindInMap:
-            - amazonLinuxAmi
-            - Ref: AWS::Region
-            - AMI
-          InstanceType: m4.large
+          InstanceType: c4.large
           KeyName:
             Ref: keyName
           Monitoring:
@@ -932,45 +858,7 @@ Resources:
             - amazonLinuxAmi
             - Ref: AWS::Region
             - AMI
-          InstanceType: c4.large
-          KeyName:
-            Ref: keyName
-          Monitoring:
-            Enabled: true
-          SecurityGroups:
-          - GroupId:
-              Ref: transcodingSecurityGroup
-          - GroupId:
-              Ref: icmpSecurityGroup
-          SubnetId:
-            Fn::Join:
-            - ','
-            - - Ref: publicSubnet1
-              - Ref: publicSubnet2
-          UserData:
-            Fn::Base64:
-              Fn::Sub: '#!/bin/bash -xe
-
-                yum -y install git
-
-                cd /root && git clone https://github.com/awslabs/immersive-media-refarch.git
-
-                REGION=${AWS::Region} TRANSCODINGINGRESSBUCKET=${transcodingIngressBucket} TRANSCODINGEGRESSBUCKET=${transcodingEgressBucket}
-                TRANSCODINGQUEUE=${transcodingQueue} CLOUDWATCHLOGSGROUP=${cloudWatchLogsGroup}
-                WAITCONDITIONHANDLE="${transcodingSpotFleetWaitConditionHandle}" bash /root/immersive-media-refarch/workshop/complete/user-data-transcoding.sh
-
-                '
-        - IamInstanceProfile:
-            Arn:
-              Fn::GetAtt:
-              - spotFleetInstanceProfile
-              - Arn
-          ImageId:
-            Fn::FindInMap:
-            - amazonLinuxAmi
-            - Ref: AWS::Region
-            - AMI
-          InstanceType: m4.large
+          InstanceType: c4.xlarge
           KeyName:
             Ref: keyName
           Monitoring:

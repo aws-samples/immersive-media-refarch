@@ -165,6 +165,8 @@ To modify the configuration file, use nano or vim. To navigate with nano, use ar
 
 _Configuration file after Changes_
 
+Full configuration file with record directives can be found [here](complete/origin/nginx/rtmp.d/rtmp.conf)
+
 ```
    application live {
       # FOR LAB, INSERT RECORDING CONFIGURATION BELOW THIS COMMENT
