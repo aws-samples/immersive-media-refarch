@@ -71,7 +71,7 @@ _Prior to launching a stack, be aware that a few of the resources launched need 
 
 Click on the Deploy to AWS button below to launch the required infrastructure in the Ireland (eu-west-1) region.
 
- [![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/CloudFormation/home?region=eu-west-1#/stacks/new?stackName=immersive-live-streaming-stack&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/start.yaml)
+ [![Launch 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=immersive-live-streaming-stack&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/start.yaml)
 
 The template will automatically bring you to the CloudFormation Dashboard and start the stack creation wizard. Click "Next". Do not change anything on the first screen.
 
@@ -223,7 +223,7 @@ In addition to generating load, Jmeter can produce basic results visualization i
 
 1\. To begin, deploy the following CloudFormation template. The goal is to simulate load coming from real users, so this template launches in Singapore (ap-southeast-1). If you have not already done so, you will need to create an SSH keypair for this region. Please refer to the steps in Lab 0. Make sure to specify this key while launching the stack as you did with the previous template.
 
-[![Launch Load Testing Stack into any other region with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/CloudFormation/home?region=ap-southeast-1#/stacks/new?stackName=load-testing&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/load.yaml)
+[![Launch Load Testing Stack into any other region with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=load-testing&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/load.yaml)
 
 2\. If necessary, start the test stream on the origin. You may have to SSH back into the instance or switch back to the Ireland region to retrieve the IP address.
 
