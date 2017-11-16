@@ -317,6 +317,74 @@ Resources:
           Ref: edgeCacheSpotFleetTargetCapacity
         TerminateInstancesWithExpiration: true
     Type: AWS::EC2::SpotFleet
+  edgeCacheAlarmScaleDown:
+    DependsOn:
+    - edgeCacheSpotFleet
+    - edgeCacheSpotFleetScalingPolicyScaleDown
+    Properties:
+      AlarmActions:
+      - Ref: edgeCacheSpotFleetScalingPolicyScaleDown
+      AlarmDescription: Alarm if CPU goes below 30% across fleet for 60s
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: FleetRequestId
+        Value:
+          Ref: edgeCacheSpotFleet
+      EvaluationPeriods: 2
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2Spot
+      Period: 300
+      Statistic: Average
+      Threshold: 30
+    Type: AWS::CloudWatch::Alarm
+  edgeCacheAlarmScaleUp:
+    DependsOn:
+    - edgeCacheSpotFleet
+    - edgeCacheSpotFleetScalingPolicyScaleUp
+    Properties:
+      AlarmActions:
+      - Ref: edgeCacheSpotFleetScalingPolicyScaleUp
+      AlarmDescription: Alarm if CPU goes above 80% across fleet for 60s
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: FleetRequestId
+        Value:
+          Ref: edgeCacheSpotFleet
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2Spot
+      Period: 60
+      Statistic: Average
+      Threshold: 80
+    Type: AWS::CloudWatch::Alarm
+  edgeCacheSpotFleetScalingPolicyScaleDown:
+    Properties:
+      PolicyName: edgeCacheSpotFleetScalingPolicyScaleDown
+      PolicyType: StepScaling
+      ScalingTargetId:
+        Ref: edgeCacheSpotFleetScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalUpperBound: 0
+          ScalingAdjustment: -1
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  edgeCacheSpotFleetScalingPolicyScaleUp:
+    Properties:
+      PolicyName: edgeCacheSpotFleetScalingPolicyScaleUp
+      PolicyType: StepScaling
+      ScalingTargetId:
+        Ref: edgeCacheSpotFleetScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: 1
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
   edgeCacheSpotFleetScalableTarget:
     DependsOn:
     - edgeCacheSpotFleet
