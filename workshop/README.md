@@ -130,7 +130,7 @@ With that said, here's what we'll be building in this lab. Let's get started.
 _Use of a terminal multiplexer like screen or tmux is advised to open multiple shells over a single SSH session._
 
 <pre>
-$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 160k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
+$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 64k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
 </pre>
 
 4\. With the test stream running and connected to the origin, new [Apple HLS](https://developer.apple.com/streaming/) transport stream segments are generated and old segments cleaned-up by the nginx-rtmp module. Confirm that this is the case by listing the directory contents periodically or _watch_-ing the segment manifest file.
@@ -191,7 +191,7 @@ With the configuration updates in place, you can now test the full system functi
 1\. FFmpeg will have stopped upon origin restart, so SSH into the origin and start the ffmpeg test stream. Let it run for ~10 seconds, then stop it by pressing CTR+C
 
 <pre>
-$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 160k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
+$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 64k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
 </pre>
 
 Simple Queue Service (SQS) decouples the transcode requests from the transcode fleet. It carries the S3 bucket events, generated when a new recording is put into **_s3IngressBucket_**, and serves as a job queue for the _**transcodingSpotFleet**_. In the event that an instance fails or is terminated by EC2 Spot, events will return to the queue and be processed by another node. This system also uses the queue depth to autoscale _**transcodingSpotFleet**_ based on number of recordings waiting to be processed, though it has been set to 1 to minimize workshop costs.
@@ -232,7 +232,7 @@ In addition to generating load, Jmeter can produce basic results visualization i
 <pre>$ ssh -i <b><i>SG_PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginElasticIp</b></i></pre>
 
 <pre>
-$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 160k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
+$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 64k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
 </pre>
 
 3\. After the stack has completed (it will only take a few minutes), from the EC2 Console in singapore, determine the IP address of the instance deployed by the recent template, then SSH into it.
@@ -355,7 +355,7 @@ When you're done with the workshop, follow these steps to make sure everything i
 ### FFmpeg Command Reference
 
 <pre>
-$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 160k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
+$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 64k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
 </pre>
 
 ### 360 Cameras We've Tested
