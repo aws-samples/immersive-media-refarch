@@ -352,27 +352,12 @@ When you're done with the workshop, follow these steps to make sure everything i
 
 ## Appendix
 
-### FFmpeg Command Reference
+## I got stuck somewhere in the labs, what do I do?
 
-<pre>
-$ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 64k -vf "format=yuv420p" -f flv 'rtmp://localhost/live/test'
-</pre>
-
-### 360 Cameras We've Tested
-
-Ricoh Theta
-insta360 one
-insta360 ?
+Launch complete.yaml and start from the beginning of any lab.
 
 ## Additional Resources and References
-## Live Streaming Basics
 
-Bandwidth optimization and Quality
-Adaptive Focus
-HEVClive production, multi-camera, switching/editing (vremiere
-
-https://code.facebook.com/posts/1126354007399553/next-generation-video-encoding-techniques-for-360-video-and-vr/
-http://web.cecs.pdx.edu/~fliu/project/vremiere/
-
-https://github.com/facebook/transform360 – ffmpeg cubemap
-https://github.com/arut/nginx-rtmp-module – nginx rtmp
+[Encoding techniques for 360-degree video](https://code.facebook.com/posts/1126354007399553/next-generation-video-encoding-techniques-for-360-video-and-vr/)
+[FFmpeg cubemap filter](https://github.com/facebook/transform360)
+[Nginx-RTMP module](https://github.com/arut/nginx-rtmp-module)
