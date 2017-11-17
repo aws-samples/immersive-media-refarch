@@ -359,5 +359,7 @@ Launch complete.yaml and start from the beginning of any lab.
 ## Additional Resources and References
 
 [Encoding techniques for 360-degree video](https://code.facebook.com/posts/1126354007399553/next-generation-video-encoding-techniques-for-360-video-and-vr/)
+
 [FFmpeg cubemap filter](https://github.com/facebook/transform360)
+
 [Nginx-RTMP module](https://github.com/arut/nginx-rtmp-module)
