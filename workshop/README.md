@@ -137,9 +137,9 @@ $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=s
 
 <pre>$ sudo watch -n 0.5 cat /var/lib/nginx/hls/test_1280/index.m3u8</pre>
 
-5\. Now for the exciting part - _playing the live stream_. Within the CloudFormation console, find the Output listed as _**clientWebsiteUrl**_. This is a static website, built with [A-Frame](https://aframe.io/) and [HLS.js](https://github.com/video-dev/hls.js/), hosted in an S3 bucket. Copy the link or open it in a new browser tab, but note that playback requires a value for the _url_ query string parameter at the end. To view the stream from the origin combine the _**primaryOriginElasticIp**_ with the nginx-rtmp application (hls) and stream name (test). You'll end up with something similar to this example:
+5\. Now for the exciting part - _playing the live stream_. Within the CloudFormation console, find the Output listed as _**clientTestPatternUrl**_. This is a static website, built with [A-Frame](https://aframe.io/) and [HLS.js](https://github.com/video-dev/hls.js/), hosted in an S3 bucket. Click the link to open it in a new browser tab. 
 
-<pre>http://<b>YOUR_TRANSCODINGEGRESS_BUCKET</b>.s3-website-REGION.amazonaws.com/?url=http://<b>primaryOriginElasticIp</b>/hls/test.m3u8</pre>
+Note that the includes a value for the _url_ query string parameter at the end, this is the stream location and can be updated to use any publicly accessible HLS stream. The CloudFormation output _**clientTestPatternUrl**_ combines the _**primaryOriginElasticIp**_ with the nginx-rtmp application (hls) and stream name (test) presenting you with a stream directly from the origin.
 
 You should now see spherical colorbars and hear a test tone from the system. Success! If you want to mute the test tone, right-click the Chrome browser tab and select 'Mute Tab'
 

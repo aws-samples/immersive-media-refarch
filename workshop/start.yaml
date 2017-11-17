@@ -49,17 +49,15 @@ Metadata:
       License for the specific language governing permissions and limitations under the License.'
 Outputs:
   clientTestPatternUrl:
-    Description: URL for the test pattern (requires starting manual start of ffmpeg)
+    Description: URL for the test pattern (requires manual start of ffmpeg)
     Value:
       Fn::Join:
       - ''
       - - Fn::GetAtt:
           - transcodingEgressBucket
           - WebsiteURL
-        - /?url=https://
-        - Fn::GetAtt:
-          - cloudFrontDistribution
-          - DomainName
+        - /?url=http://
+        - Ref: primaryOriginElasticIp
         - /hls/test.m3u8
   applicationLoadBalancerId:
     Description: The Application Load Balancer ID
