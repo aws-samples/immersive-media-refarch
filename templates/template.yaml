@@ -1187,11 +1187,9 @@ Resources:
         - -f
         - lavfi
         - -i
-        - anullsrc=channel_layout=stereo:sample_rate=44100
+        - aevalsrc=sin(400*2*PI*t)
         - -vcodec
         - libx264
-        - -preset
-        - ultrafast
         - -vf
         - format=yuv420p
         - -x264opts 
