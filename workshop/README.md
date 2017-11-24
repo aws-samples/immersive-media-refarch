@@ -188,7 +188,7 @@ Recording begins when a stream is published to the nginx application. Upon strea
 
 With the configuration updates in place, you can now test the full system functionality. There's a few components to the VOD system, so you'll want to examine each one to validate proper execution.
 
-1\. FFmpeg will have stopped upon origin restart, so SSH into the origin and start the ffmpeg test stream. Let it run for ~10 seconds, then stop it by pressing CTR+C
+1\. FFmpeg will have stopped upon origin restart, so SSH into the origin and start the ffmpeg test stream. Let it run for ~30 seconds, then stop it by pressing CTR+C
 
 <pre>
 $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 64k -vf "format=yuv420p" -x264opts keyint=60:min-keyint=60:scenecut=-1 -f flv 'rtmp://localhost/live/test'
