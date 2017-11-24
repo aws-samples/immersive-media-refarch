@@ -229,7 +229,7 @@ In addition to generating load, Jmeter can produce basic results visualization i
 
 2\. If necessary, start the test stream on the origin. You may have to SSH back into the instance or switch back to the Ireland region to retrieve the IP address.
 
-<pre>$ ssh -i <b><i>SG_PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginElasticIp</b></i></pre>
+<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>primaryOriginElasticIp</b></i></pre>
 
 <pre>
 $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=size=1280x720:rate=30 -vcodec libx264 -b:v 500k -c:a aac -b:a 64k -vf "format=yuv420p" -x264opts keyint=60:min-keyint=60:scenecut=-1 -f flv 'rtmp://localhost/live/test'
@@ -237,7 +237,7 @@ $ ffmpeg -stats -re -f lavfi -i aevalsrc="sin(400*2*PI*t)" -f lavfi -i testsrc=s
 
 3\. After the stack has completed (it will only take a few minutes), from the EC2 Console in singapore, determine the IP address of the instance deployed by the recent template, then SSH into it.
 
-<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
+<pre>$ ssh -i <b><i>SG_PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
 
 4\. Run jmeter replacing the _-Jhost_ flag with the **_originElasticIpAddress_**. Once executed, the test will run for 3 minutes, simulating 150 clients, ramping up over a period of 15 seconds. A log of the test and an HTML webpage will be generated in the required web-hosted directory.
 
@@ -275,7 +275,7 @@ Let's test this tier to see how it changes the performance characteristics of th
 
 1\. SSH into the load testing instance if you haven't already done so.
 
-<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
+<pre>$ ssh -i <b><i>SG_PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
 
 2\. Run the same Jmeter load test, this time updating the -Jhost flag to point to the DNS of the Application Load Balancer that's handling requests for the cache fleet, called _**applicationLoadBalancerDns**_ in the Ireland CloudFormation Outputs.
 
@@ -307,7 +307,7 @@ With this configuration, initial client requests to CloudFront and cache misses 
 
 3\. Now you're ready to test. SSH into the load testing instance
 
-<pre>$ ssh -i <b><i>PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
+<pre>$ ssh -i <b><i>SG_PRIVATE_KEY.PEM</i></b> ec2-user@<b><i>loadTestingEC2Instance</b></i></pre>
 
 4\. Update the _-Jhost_ flag to point to the Domain of the CloudFront Distribution, found in the CloudFront console under Domain Name.
 
