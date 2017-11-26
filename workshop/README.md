@@ -354,7 +354,11 @@ When you're done with the workshop, follow these steps to make sure everything i
 
 ## I got stuck somewhere in the labs, what do I do?
 
-Launch complete.yaml and start from the beginning of any lab.
+Launch the stack below and start from the beginning of any lab. Make sure to clean up your resources!
+
+[![Launch the complete 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=immersive-live-streaming-stack&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/complete.yaml)
+
+
 
 ## Additional Resources and References
 
