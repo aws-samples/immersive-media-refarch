@@ -358,6 +358,10 @@ Launch the stack below and start from the beginning of any lab. Make sure to cle
 
 [![Launch the complete 360 Live Streaming Stack into Ireland with CloudFormation](images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=immersive-live-streaming-stack&templateURL=https://s3-eu-west-1.amazonaws.com/immersive-streaming-workshop/complete.yaml)
 
+## How do I stream my own camera into the infrastructure?
+
+Point the encoder to rtmp://primaryOriginElasticIp/live/FOO where FOO is whatever you want the stream to be called. After ~10s (the time it takes to create the first HLS segment) you can access the stream URL from http://primaryOriginElasticIp/hls/FOO.
+
 
 
 ## Additional Resources and References
