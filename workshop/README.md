@@ -169,6 +169,7 @@ Full configuration file with record directives can be found [here](complete/orig
 
 ```
    application live {
+      live on;
       # FOR LAB, INSERT RECORDING CONFIGURATION BELOW THIS COMMENT
       record all;
       record_path /var/lib/nginx/rec;
@@ -361,8 +362,6 @@ Launch the stack below and start from the beginning of any lab. Make sure to cle
 ## How do I stream my own camera into the infrastructure?
 
 Point the encoder to rtmp://primaryOriginElasticIp/live/FOO where FOO is whatever you want the stream to be called. After ~10s (the time it takes to create the first HLS segment) you can access the stream URL from http://primaryOriginElasticIp/hls/FOO.
-
-
 
 ## Additional Resources and References
 
