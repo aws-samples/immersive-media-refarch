@@ -613,6 +613,90 @@ Resources:
           Ref: edgeCacheSpotFleetTargetCapacity
         TerminateInstancesWithExpiration: true
     Type: AWS::EC2::SpotFleet
+  edgeCacheAlarmScaleDown:
+    DependsOn:
+    - edgeCacheSpotFleet
+    - edgeCacheSpotFleetScalingPolicyScaleDown
+    - applicationLoadBalancerTargetGroup
+    - applicationLoadBalancer
+    Properties:
+      AlarmActions:
+      - Ref: edgeCacheSpotFleetScalingPolicyScaleDown
+      AlarmDescription: Alarm if request count per target goes below 1000 for 10m
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: LoadBalancer
+        Value:
+          Fn::GetAtt:
+          - applicationLoadBalancer
+          - LoadBalancerFullName
+      - Name: TargetGroup
+        Value:
+          Fn::GetAtt:
+            - applicationLoadBalancerTargetGroup
+            - TargetGroupFullName
+      EvaluationPeriods: 2
+      MetricName: RequestCountPerTarget
+      Namespace: AWS/ApplicationELB
+      Period: 300
+      Statistic: Sum
+      Threshold: 1000
+    Type: AWS::CloudWatch::Alarm
+  edgeCacheAlarmScaleUp:
+    DependsOn:
+    - edgeCacheSpotFleet
+    - edgeCacheSpotFleetScalingPolicyScaleUp
+    Properties:
+      AlarmActions:
+      - Ref: edgeCacheSpotFleetScalingPolicyScaleUp
+      AlarmDescription: Alarm if request count per target goes above 3500 for 1m
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: LoadBalancer
+        Value:
+          Fn::GetAtt:
+          - applicationLoadBalancer
+          - LoadBalancerFullName
+      - Name: TargetGroup
+        Value:
+          Fn::GetAtt:
+            - applicationLoadBalancerTargetGroup
+            - TargetGroupFullName
+      EvaluationPeriods: 1
+      MetricName: RequestCountPerTarget
+      Namespace: AWS/ApplicationELB
+      Period: 60
+      Statistic: Sum
+      Threshold: 3500
+    Type: AWS::CloudWatch::Alarm
+  edgeCacheSpotFleetScalingPolicyScaleDown:
+    Properties:
+      PolicyName: edgeCacheSpotFleetScalingPolicyScaleDown
+      PolicyType: StepScaling
+      ScalingTargetId:
+        Ref: edgeCacheSpotFleetScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalUpperBound: 0
+          ScalingAdjustment: -1
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  edgeCacheSpotFleetScalingPolicyScaleUp:
+    Properties:
+      PolicyName: edgeCacheSpotFleetScalingPolicyScaleUp
+      PolicyType: StepScaling
+      ScalingTargetId:
+        Ref: edgeCacheSpotFleetScalableTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 300
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: 1
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
   edgeCacheSpotFleetScalableTarget:
     DependsOn:
     - edgeCacheSpotFleet
@@ -1187,9 +1271,11 @@ Resources:
         - -f
         - lavfi
         - -i
-        - aevalsrc=sin(400*2*PI*t)
+        - anullsrc=channel_layout=stereo:sample_rate=44100
         - -vcodec
         - libx264
+        - -preset
+        - ultrafast
         - -vf
         - format=yuv420p
         - -x264opts 
